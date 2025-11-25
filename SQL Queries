@@ -1,6 +1,7 @@
 # ** Database Security Group 17 **
 
 ```sql
+```
 -- Creation of Assignment's Database -- 
 CREATE DATABASE DBS_G17;
 GO
