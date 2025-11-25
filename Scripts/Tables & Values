@@ -124,6 +124,7 @@ CREATE TABLE Agents (
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
 	Phone NVARCHAR(20) NOT NULL,
+	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang')),
 	Address NVARCHAR (255)
 );
 GO
