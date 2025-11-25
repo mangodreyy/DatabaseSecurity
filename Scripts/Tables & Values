@@ -16,7 +16,7 @@ INSERT INTO Department VALUES
 GO
 
 -- Employee Table
-CREATE TABLE Employee (
+CREATE TABLE Employees (
 	EmployeeID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
 	DepartmentID VARCHAR(10) FOREIGN KEY REFERENCES Department(DepartmentID),
 	Status NVARCHAR(20) DEFAULT 'ACTIVE',
@@ -24,9 +24,47 @@ CREATE TABLE Employee (
 );
 GO
 
+-- Customer Table
+CREATE TABLE Customers (
+	CustID VARCHAR(5) NOT NULL PRIMARY KEY,
+	CustName varchar(100) NOT NULL,
+	Phone varchar(20),
+	Email varchar(200),
+);
+GO
+
+-- Front End User Account Table
+CREATE TABLE AppUsers (
+	UserID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
+    -- Login Credentials
+    Username VARCHAR(100) NOT NULL UNIQUE, 
+    PasswordHash VARBINARY(256) NOT NULL, -- Store the securely hashed password
+    UserType VARCHAR(10) NOT NULL CHECK (UserType IN ('EMPLOYEE', 'CUSTOMER')),
+    
+    -- Links to Profile Tables (One of these must be NULL)
+    EmployeeID INT NULL, 
+    CustID VARCHAR(5) NULL, 
+    
+    -- Security Fields
+    LastLogin DATETIME NULL,
+    IsActive BIT DEFAULT 1,
+
+    -- Foreign Key Constraints (Ensure only one link is active)
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
+    FOREIGN KEY (CustID) REFERENCES Customers(CustID),
+
+    -- CONSTRAINT to enforce that a UserID links to EITHER an Employee OR a Customer, but not both, and not neither.
+    CONSTRAINT CHK_One_Profile_Link 
+        CHECK (
+            (CASE WHEN EmployeeID IS NOT NULL THEN 1 ELSE 0 END + 
+             CASE WHEN CustID IS NOT NULL THEN 1 ELSE 0 END) = 1
+        )
+);
+GO
+
 -- Database Administrations Table [DBA]
-CREATE TABLE DatabaseAdministration(
-	EmployeeID INT FOREIGN KEY REFERENCES Employee(EmployeeID),
+CREATE TABLE DatabaseAdministrations (
+	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
@@ -36,8 +74,8 @@ CREATE TABLE DatabaseAdministration(
 GO
 
 -- Software Developers Team Table [SDEV]
-CREATE TABLE SoftwareDevelopers(
-	EmployeeID INT FOREIGN KEY REFERENCES Employee(EmployeeID),
+CREATE TABLE SoftwareDevelopers (
+	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
@@ -47,8 +85,8 @@ CREATE TABLE SoftwareDevelopers(
 GO
 
 -- Accounting Team Table [ACC]
-CREATE TABLE Accounting(
-	EmployeeID INT FOREIGN KEY REFERENCES Employee(EmployeeID),
+CREATE TABLE Accounting (
+	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
@@ -58,8 +96,8 @@ CREATE TABLE Accounting(
 GO
 
 -- Human Resources Team Table [HR]
-CREATE TABLE HumanResources(
-	EmployeeID INT FOREIGN KEY REFERENCES Employee(EmployeeID),
+CREATE TABLE HumanResources (
+	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
@@ -69,8 +107,8 @@ CREATE TABLE HumanResources(
 GO
 
 -- Marketing Development Table [MKT]
-CREATE TABLE MarketingDevelopment(
-	EmployeeID INT FOREIGN KEY REFERENCES Employee(EmployeeID),
+CREATE TABLE MarketingDevelopment (
+	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
@@ -81,7 +119,7 @@ GO
 
 -- Agents Table [AGENT]
 CREATE TABLE Agents (
-	EmployeeID INT FOREIGN KEY REFERENCES Employee(EmployeeID),
+	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
@@ -92,30 +130,30 @@ GO
 
 -- Products Table
 CREATE TABLE Products (
-	
+	ProductID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+
 );
 GO
 
--- Sales Table
+-- Sales (Invoice) Table
 CREATE TABLE Sales (
-	
+	SalesID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
+	TotalAmount DECIMAL(10,2) NOT NULL,
+	SaleDate DATETIME DEFAULT GETDATE(),
 );
+GO
+
+-- Sales Details Table
+CREATE TABLE SalesDetails (
+	SaleID INT IDENTITY(1,1) NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
+	ProductID INT IDENTITY (1,1) NOT NULL FOREIGN KEY REFERENCES Products(ProductID),
+	Quantity INT NOT NULL
+); 
 GO
 
 -- Commission Table
 CREATE TABLE Commission (
-	
-);
-GO
-
--- Invoice Table
-
-
--- Customer Table
-CREATE TABLE Customers (
-	CustID VARCHAR(5) NOT NULL PRIMARY KEY,
-	CustName varchar(100) NOT NULL,
-	Phone varchar(20),
-	Email varchar(200),
+	CommissionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 );
 GO
