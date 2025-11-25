@@ -1,0 +1,6 @@
+-- Creation of Assignment's Database --
+CREATE DATABASE DBS_G17;
+GO
+
+USE DBS_G17;
+GO
