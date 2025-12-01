@@ -6,12 +6,20 @@ CREATE TABLE Department (
 );
 GO
 
+-- Database Administrations Table [DBA]
+-- Software Developers Team Table [SDEV]
+-- Accounting Team Table [ACC]
+-- Human Resources Team Table [HR]
+-- Marketing Development Table [MKT]
+-- Administration Table [ADMIN]
+
 INSERT INTO Department VALUES
 ('DBA', 'Database Administration'),
 ('SDEV', 'Software Development'),
 ('ACC', 'Accounting'),
 ('HR', 'Human Resources'),
 ('MKT', 'Marketing Development'),
+('ADMIN','Administation'),
 ('AGENT','Agents');
 GO
 
@@ -20,6 +28,14 @@ CREATE TABLE Employees (
 	EmployeeID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
 	DepartmentID VARCHAR(10) FOREIGN KEY REFERENCES Department(DepartmentID),
 	Status NVARCHAR(20) DEFAULT 'ACTIVE',
+	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
+	FullName VARCHAR(100) NOT NULL,
+	Email NVARCHAR(100),
+	Phone NVARCHAR(20) NOT NULL,
+	MaritialStatus VARCHAR(50) CHECK (MaritialStatus IN ('Single','Married')),
+	EmergencyContact NVARCHAR(20) NOT NULL,
+	Relationship VARCHAR(50) CHECK (Relationship IN ('Father', 'Mother','Spouse','Siblings')),
+	Address NVARCHAR (255),
 	CreatedAt DATETIME DEFAULT GETDATE()
 );
 GO
@@ -62,74 +78,20 @@ CREATE TABLE AppUsers (
 );
 GO
 
--- Database Administrations Table [DBA]
-CREATE TABLE DatabaseAdministrations (
-	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
-	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
-	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
-	Address NVARCHAR (255)
-);
-GO
-
--- Software Developers Team Table [SDEV]
-CREATE TABLE SoftwareDevelopers (
-	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
-	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
-	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
-	Address NVARCHAR (255)
-);
-GO
-
--- Accounting Team Table [ACC]
-CREATE TABLE Accounting (
-	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
-	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
-	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
-	Address NVARCHAR (255)
-);
-GO
-
--- Human Resources Team Table [HR]
-CREATE TABLE HumanResources (
-	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
-	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
-	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
-	Address NVARCHAR (255)
-);
-GO
-
--- Marketing Development Table [MKT]
-CREATE TABLE MarketingDevelopment (
-	EmployeeID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
-	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
-	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
-	Address NVARCHAR (255)
-);
-GO
-
 -- Agents Table [AGENT]
 CREATE TABLE Agents (
 	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
-	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
+	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Team Lead', 'Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
 	Phone NVARCHAR(20) NOT NULL,
-	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang')),
+	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam')),
 	Address NVARCHAR (255)
 );
 GO
 
 -- Products Table
+-- status: instock outstock / available unavailable
 CREATE TABLE Products (
 	ProductID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	ProductName NVARCHAR(100) NOT NULL,
@@ -146,7 +108,7 @@ CREATE TABLE Sales (
 	AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
 	CustID VARCHAR(5) NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
 	TotalAmount DECIMAL(10,2) NOT NULL,
-	SaleDate DATETIME DEFAULT GETDATE(),
+	SalesDate DATETIME DEFAULT GETDATE(),
 	PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED'))
 );
 GO
@@ -155,7 +117,8 @@ GO
 CREATE TABLE SalesDetails (
 	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
 	ProductID INT NOT NULL FOREIGN KEY REFERENCES Products(ProductID),
-	Quantity INT NOT NULL
+	Quantity INT NOT NULL,
+	Amount DECIMAL (10,2) NOT NULL
 ); 
 GO
 
@@ -163,7 +126,7 @@ GO
 CREATE TABLE Commission (
 	CommissionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
-	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID),
 
+	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID),
 );
 GO
