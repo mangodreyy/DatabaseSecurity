@@ -40,12 +40,25 @@ CREATE TABLE Employees (
 );
 GO
 
+-- Agents Table [AGENT]
+CREATE TABLE Agents (
+	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
+	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Team Lead', 'Member')),
+	FullName VARCHAR(100) NOT NULL,
+	Email NVARCHAR(100),
+	Phone NVARCHAR(20) NOT NULL,
+	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam')),
+	Address NVARCHAR (255)
+);
+GO
+
 -- Customer Table
 CREATE TABLE Customers (
 	CustID VARCHAR(5) NOT NULL PRIMARY KEY,
 	CustName varchar(100) NOT NULL,
 	Phone varchar(20),
 	Email varchar(200),
+	Address varchar(255)
 );
 GO
 
@@ -78,18 +91,6 @@ CREATE TABLE AppUsers (
 );
 GO
 
--- Agents Table [AGENT]
-CREATE TABLE Agents (
-	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
-	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Team Lead', 'Member')),
-	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
-	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam')),
-	Address NVARCHAR (255)
-);
-GO
-
 -- Products Table
 -- status: instock outstock / available unavailable
 CREATE TABLE Products (
@@ -109,7 +110,9 @@ CREATE TABLE Sales (
 	CustID VARCHAR(5) NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
 	TotalAmount DECIMAL(10,2) NOT NULL,
 	SalesDate DATETIME DEFAULT GETDATE(),
-	PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED'))
+	PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
+	PaymentMethod CHAR(50) CHECK (PaymentMethod IN ('Online Banking','E-Wallet','Credit Card','CashOnDelivery')),
+	DeliveryAddress NVARCHAR (255)
 );
 GO
 
@@ -117,16 +120,33 @@ GO
 CREATE TABLE SalesDetails (
 	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
 	ProductID INT NOT NULL FOREIGN KEY REFERENCES Products(ProductID),
+	--pull selling price
 	Quantity INT NOT NULL,
 	Amount DECIMAL (10,2) NOT NULL
 ); 
+GO
+
+CREATE TABLE CommissionRates (
+	RateID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	RoleInDepartment VARCHAR(50) NOT NULL CHECK (RoleInDepartment IN ('Team Lead','Member')),
+	CommissionRate DECIMAL(5,2) NOT NULL,
+	EffectiveRate DATETIME DEFAULT GETDATE(),
+);
+GO
+
+INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
+('Team Lead',7.50),
+('Member',5.00);
 GO
 
 -- Commission Table
 CREATE TABLE Commission (
 	CommissionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
-
+	AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
+	SalesAmount DECIMAL (10,2) NOT NULL,
+	CommissionRate DECIMAL (5,2) NOT NULL,
+	CommissionAmount DECIMAL(10,2) NOT NULL,
 	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID),
 );
 GO
