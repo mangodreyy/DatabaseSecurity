@@ -1,4 +1,4 @@
--- TABLES -- 
+------------			TABLES					------------
 -- Department Table
 CREATE TABLE Department (
 	DepartmentID VARCHAR(10) NOT NULL PRIMARY KEY,
@@ -21,7 +21,7 @@ CREATE TABLE Employees (
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL UNIQUE,
+	Phone NVARCHAR(20) NOT NULL UNIQUE ,
 	MaritialStatus VARCHAR(50) CHECK (MaritialStatus IN ('Single','Married')),
 	EmergencyContact NVARCHAR(20) NOT NULL,
 	Relationship VARCHAR(50) CHECK (Relationship IN ('Father', 'Mother','Spouse','Siblings')),
@@ -155,20 +155,4 @@ CREATE TABLE Commission (
 	CommissionAmount DECIMAL(10,2) NOT NULL,
 	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID),
 );
-GO
-
--- Value Insertion --
-INSERT INTO Department VALUES
-('DBA', 'Database Administration'),
-('SDEV', 'Software Development'),
-('ACC', 'Accounting'),
-('HR', 'Human Resources'),
-('MKT', 'Marketing Development'),
-('ADMIN','Administation'),
-('AGENT','Agents');
-GO
-
-INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
-('Team Lead',7.50),
-('Member',5.00);
 GO
