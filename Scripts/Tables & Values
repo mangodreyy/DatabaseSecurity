@@ -13,16 +13,6 @@ GO
 -- Marketing Development Table [MKT]
 -- Administration Table [ADMIN]
 
-INSERT INTO Department VALUES
-('DBA', 'Database Administration'),
-('SDEV', 'Software Development'),
-('ACC', 'Accounting'),
-('HR', 'Human Resources'),
-('MKT', 'Marketing Development'),
-('ADMIN','Administation'),
-('AGENT','Agents');
-GO
-
 -- Employee Table
 CREATE TABLE Employees (
 	EmployeeID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
@@ -134,11 +124,6 @@ CREATE TABLE CommissionRates (
 );
 GO
 
-INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
-('Team Lead',7.50),
-('Member',5.00);
-GO
-
 -- Commission Table
 CREATE TABLE Commission (
 	CommissionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -149,4 +134,20 @@ CREATE TABLE Commission (
 	CommissionAmount DECIMAL(10,2) NOT NULL,
 	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID),
 );
+GO
+
+-- Value Insertion --
+INSERT INTO Department VALUES
+('DBA', 'Database Administration'),
+('SDEV', 'Software Development'),
+('ACC', 'Accounting'),
+('HR', 'Human Resources'),
+('MKT', 'Marketing Development'),
+('ADMIN','Administation'),
+('AGENT','Agents');
+GO
+
+INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
+('Team Lead',7.50),
+('Member',5.00);
 GO
