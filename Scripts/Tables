@@ -34,11 +34,7 @@ GO
 CREATE TABLE Agents (
 	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Team Lead', 'Member')),
-	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
-	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam')),
-	Address NVARCHAR (255)
+	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam'))
 );
 GO
 
