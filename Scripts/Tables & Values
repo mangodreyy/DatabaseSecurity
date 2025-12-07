@@ -95,14 +95,31 @@ GO
 
 -- Sales (Invoice) Table
 CREATE TABLE Sales (
-	SalesID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-	AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
-	CustID VARCHAR(5) NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
-	TotalAmount DECIMAL(10,2) NOT NULL,
-	SalesDate DATETIME DEFAULT GETDATE(),
-	PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
-	PaymentMethod CHAR(50) CHECK (PaymentMethod IN ('Online Banking','E-Wallet','Credit Card','CashOnDelivery')),
-	DeliveryAddress NVARCHAR (255)
+    SalesID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
+    CustID VARCHAR(5) NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
+    TotalAmount DECIMAL(10,2) NOT NULL,
+    SalesDate DATETIME DEFAULT GETDATE(),
+    PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
+    PaymentMethod CHAR(50) CHECK (PaymentMethod IN ('Online Banking','E-Wallet','Credit Card','CashOnDelivery')),
+    DeliveryAddress NVARCHAR(255),
+    CancellationReason VARCHAR(50) CHECK (CancellationReason IN (
+        'Customer Request',
+        'Payment Failed',
+        'Out of Stock',
+        'Duplicate Order',
+        'Wrong Address',
+        'Other'
+    )) NULL,
+    CancellationNotes NVARCHAR(255) NULL,
+    CancelledDate DATETIME NULL,
+    
+    -- Constraint: Cancellation fields can only be filled when status is CANCELLED
+    CONSTRAINT CHK_Cancellation_Only_When_Cancelled 
+        CHECK (
+            (PaymentStatus = 'CANCELLED' AND CancellationReason IS NOT NULL) OR
+            (PaymentStatus != 'CANCELLED' AND CancellationReason IS NULL AND CancellationNotes IS NULL AND CancelledDate IS NULL)
+        )
 );
 GO
 
