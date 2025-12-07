@@ -126,10 +126,14 @@ GO
 -- Sales Details Table
 CREATE TABLE SalesDetails (
 	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
+	SalesDetailsID INT NOT NULL,
 	ProductID INT NOT NULL FOREIGN KEY REFERENCES Products(ProductID),
-	--pull selling price
+	UnitPrice DECIMAL (10,2) NOT NULL,
 	Quantity INT NOT NULL,
 	Amount DECIMAL (10,2) NOT NULL
+
+	CONSTRAINT SalesDetails_PK PRIMARY KEY (SalesID, SalesDetailsID),
+	CONSTRAINT SalesProducts UNIQUE (SalesID, ProductID)
 ); 
 GO
 
