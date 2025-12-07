@@ -1,1 +1,111 @@
+------------		Stored Procedure			------------
+-- check pending payment [finance, admin]
+CREATE PROCEDURE Check_PaymentStatus
+	@SalesID INT = NULL,
+	@SalesDate DATETIME = NULL,
+	@CustID INT = NULL,
+	@AgentID INT = NULL,
+	@PaymentStatus CHAR(10) = NULL
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @InvoiceNumber VARCHAR(20);
+	DECLARE @DaysOverdue INT;
+	DECLARE @CancelledCount INT;
+	DECLARE @CustomerID INT;
+	DECLARE @CompanyName VARCHAR(200);
+
+	IF @SalesID IS NOT NULL
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM Sales WHERE @SalesID = SalesID)
+		BEGIN
+			-- Entered wrong sales ID
+			SET @InvoiceNumber = 'INV-' + RIGHT('00000' + CAST(@SalesID AS VARCHAR(5)), 5);
+			PRINT 'Error: Invoice ID: ' + @InvoiceNumber + ' not found! Please try again';
+			RETURN;
+		END
+
+		SELECT @PaymentStatus = PaymentStatus,@SalesDate = SalesDate,
+			   @InvoiceNumber = 'INV-' + RIGHT('00000' + CAST(SalesID AS VARCHAR(5)), 5),
+			   @CustomerID = CustID, @AgentID = AgentID
+		FROM Sales 
+		WHERE SalesID = @SalesID;
+
+		IF (@PaymentStatus = 'PAID')
+		BEGIN
+			PRINT 'Invoice ID: ' + @InvoiceNumber + ' is PAID';
+		END
+
+		ELSE IF (@PaymentStatus = 'PENDING')
+		BEGIN
+			SET @DaysOverdue = DATEDIFF (DAY, @SalesDate, GETDATE());
+			PRINT 'Invoice ID: ' + @InvoiceNumber + ' is PENDING';
+			IF (@DaysOverdue>30)
+			BEGIN
+				PRINT 'Payment overdue for' + CAST(@DaysOverdue AS VARCHAR(10)) + ' days (more than a month)';
+				RETURN;
+			END
+		END
+
+		ELSE IF (@PaymentStatus = 'CANCELLED')
+		BEGIN
+			SELECT @CompanyName = CompanyName 
+			FROM Customers 
+			WHERE CustID = @CustomerID;
+
+			SELECT @CancelledCount = COUNT(*) 
+			FROM Sales 
+			WHERE CustID = @CustomerID 
+			AND PaymentStatus = 'CANCELLED';
+
+			PRINT 'Invoice ID: ' + @InvoiceNumber + ' is CANCELLED';
+			PRINT 'Customer: ' + @CompanyName + ' (' + @CustomerID + ')';
+			
+			SELECT 
+				CancellationReason,
+				CancelledDate
+			FROM Sales
+			WHERE SalesID = @SalesID;
+
+			PRINT 'Total cancelled orders: ' + CAST(@CancelledCount AS VARCHAR(10));
+
+			IF (@CancelledCount > 3)
+			BEGIN
+				PRINT '';
+				PRINT 'All cancelled orders for this customer:';
+				SELECT 
+					'INV-' + RIGHT('00000' + CAST(SalesID AS VARCHAR(5)), 5) AS InvoiceNumber,
+					SalesDate,
+					TotalAmount,
+					CancellationReason,
+					CancelledDate
+				FROM Sales
+				WHERE CustID = @CustomerID 
+				AND PaymentStatus = 'CANCELLED'
+				ORDER BY SalesDate DESC;
+			END
+		END
+	END
+ELSE
+BEGIN
+	SELECT 
+    s.SalesID,s.CustID,c.CompanyName,s.SalesDate,s.TotalAmount,s.PaymentStatus,
+    DATEDIFF(DAY, s.SalesDate, GETDATE()) AS DaysOverdue
+	FROM Sales s
+
+    INNER JOIN Customers c ON s.CustID = c.CustID
+    WHERE s.PaymentStatus = 'PENDING'
+    AND DATEDIFF(DAY, s.SalesDate, GETDATE()) > 30
+    AND (@CustID IS NULL OR s.CustID = @CustID)
+    ORDER BY s.SalesDate ASC;   
+	
+    IF @@ROWCOUNT = 0
+		BEGIN
+			PRINT 'No pending payments overdue for more than a month found.';
+		END
+    END
+
+END
+GO
+
 
