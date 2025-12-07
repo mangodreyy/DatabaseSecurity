@@ -20,7 +20,7 @@ CREATE TABLE Employees (
 	Status NVARCHAR(20) DEFAULT 'ACTIVE',
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
-	Email NVARCHAR(100),
+	Email NVARCHAR(100) NOT NULL UNIQUE,
 	Phone NVARCHAR(20) NOT NULL UNIQUE ,
 	MaritialStatus VARCHAR(50) CHECK (MaritialStatus IN ('Single','Married')),
 	EmergencyContact NVARCHAR(20) NOT NULL,
@@ -34,17 +34,34 @@ GO
 CREATE TABLE Agents (
 	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Team Lead', 'Member')),
-	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam'))
+	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam')),
+	AssignedDate DATETIME DEFAULT GETDATE()
 );
+GO
+
+CREATE UNIQUE INDEX UQ_One_TeamLead_Per_Region 
+ON Agents(Region) 
+WHERE RoleInDepartment = 'Team Lead';
 GO
 
 -- Customer Table
 CREATE TABLE Customers (
-	CustID VARCHAR(5) NOT NULL PRIMARY KEY,
-	CustName varchar(100) NOT NULL,
-	Phone varchar(20) NOT NULL UNIQUE,
-	Email varchar(200),
-	Address varchar(255)
+	CustID INT IDENTITY (1,1) NOT NULL PRIMARY KEY,
+	CompanyName VARCHAR(150) NOT NULL UNIQUE,
+	CompanyRegNo VARCHAR(50) NOT NULL UNIQUE,
+
+	PersonInCharge VARCHAR(100) NOT NULL,
+	PersonInCharge_Contact VARCHAR(20) NOT NULL,
+
+	CompanyPhone VARCHAR(20) NOT NULL UNIQUE,
+	Email VARCHAR(200) NOT NULL UNIQUE,
+	CompanyAddress VARCHAR(255) NOT NULL,
+	BusinessType VARCHAR(50) CHECK (BusinessType IN('Restaurant', 'Hotel',
+	'Cafe', 'Supermarket', 'Catering', 'Retailer', 'Other')),
+
+	Status VARCHAR(20) DEFAULT 'Active' CHECK (Status IN ('Active', 'Inactive', 'Suspended')),
+	RegisteredBy INT FOREIGN KEY REFERENCES Employees(EmployeeID),
+    CreatedAt DATETIME DEFAULT GETDATE()
 );
 GO
 
@@ -57,16 +74,12 @@ CREATE TABLE AppUsers (
     UserType VARCHAR(10) NOT NULL CHECK (UserType IN ('EMPLOYEE', 'CUSTOMER')),
     
     -- Links to Profile Tables (One of these must be NULL)
-    EmployeeID INT NULL, 
-    CustID VARCHAR(5) NULL, 
+    EmployeeID INT NULL FOREIGN KEY REFERENCES Employees(EmployeeID), 
+    CustID INT NULL FOREIGN KEY REFERENCES Customers(CustID), 
     
     -- Security Fields
     LastLogin DATETIME NULL,
     IsActive BIT DEFAULT 1,
-
-    -- Foreign Key Constraints (Ensure only one link is active)
-    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
-    FOREIGN KEY (CustID) REFERENCES Customers(CustID),
 
     -- CONSTRAINT to enforce that a UserID links to EITHER an Employee OR a Customer, but not both, and not neither.
     CONSTRAINT CHK_One_Profile_Link 
@@ -93,8 +106,7 @@ GO
 CREATE TABLE Sales (
     SalesID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
-    CustID VARCHAR(5) NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
-	EmployeeID INT NOT NULL FOREIGN KEY REFERENCES Employees(EmployeeID),
+    CustID INT NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
     TotalAmount DECIMAL(10,2) NOT NULL,
     SalesDate DATETIME DEFAULT GETDATE(),
     PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
@@ -110,7 +122,6 @@ CREATE TABLE Sales (
         'Wrong Address',
         'Other'
     )) NULL,
-    CancellationNotes NVARCHAR(255) NULL,
     CancelledDate DATETIME NULL,
     
     -- Constraint: Cancellation fields can only be filled when status is CANCELLED
@@ -133,9 +144,9 @@ CREATE TABLE SalesDetails (
 	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
 	SalesDetailsID INT NOT NULL,
 	ProductID INT NOT NULL FOREIGN KEY REFERENCES Products(ProductID),
-	UnitPrice DECIMAL (10,2) NOT NULL,
-	Quantity INT NOT NULL,
-	Amount DECIMAL (10,2) NOT NULL
+	UnitPrice DECIMAL (10,2) NOT NULL CHECK (UnitPrice >= 0),
+	Quantity INT NOT NULL CHECK (Quantity > 0),
+	Amount DECIMAL (10,2) NOT NULL CHECK (Amount >= 0)
 
 	CONSTRAINT SalesDetails_PK PRIMARY KEY (SalesID, SalesDetailsID),
 	CONSTRAINT SalesProducts UNIQUE (SalesID, ProductID)
@@ -145,7 +156,8 @@ GO
 CREATE TABLE DeliveryStatus(
 	DeliveryID INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
 	SalesID INT FOREIGN KEY REFERENCES Sales(SalesID),
-	DeliveryStatus CHAR(20) CHECK (DeliveryStatus IN ('Delivered','Returned to Sender','Order Placed')),
+	DeliveryStatus VARCHAR(30) CHECK (DeliveryStatus IN ('Delivered','Returned to Sender','Order Placed')),
+	UpdatedAt DATETIME DEFAULT GETDATE(),
 
 	CONSTRAINT One_Delivery_Per_Sale UNIQUE (SalesID),
 );
@@ -155,7 +167,7 @@ CREATE TABLE CommissionRates (
 	RateID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	RoleInDepartment VARCHAR(50) NOT NULL CHECK (RoleInDepartment IN ('Team Lead','Member')),
 	CommissionRate DECIMAL(5,2) NOT NULL,
-	EffectiveRate DATETIME DEFAULT GETDATE(),
+	EffectiveDate DATETIME DEFAULT GETDATE(),
 );
 GO
 
@@ -167,6 +179,8 @@ CREATE TABLE Commission (
 	SalesAmount DECIMAL (10,2) NOT NULL,
 	CommissionRate DECIMAL (5,2) NOT NULL,
 	CommissionAmount DECIMAL(10,2) NOT NULL,
+	CalculatedDate DATETIME DEFAULT GETDATE(),
+
 	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID)
 );
 GO
