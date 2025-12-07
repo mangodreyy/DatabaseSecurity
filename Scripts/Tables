@@ -99,6 +99,8 @@ CREATE TABLE Sales (
     SalesDate DATETIME DEFAULT GETDATE(),
     PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
     PaymentMethod CHAR(50) CHECK (PaymentMethod IN ('Online Banking','E-Wallet','Credit Card','CashOnDelivery')),
+	PaymentDate DATETIME,
+	DeliveryDate DATETIME NOT NULL,
     DeliveryAddress NVARCHAR(255),
     CancellationReason VARCHAR(50) CHECK (CancellationReason IN (
         'Customer Request',
@@ -116,6 +118,12 @@ CREATE TABLE Sales (
         CHECK (
             (PaymentStatus = 'CANCELLED' AND CancellationReason IS NOT NULL) OR
             (PaymentStatus != 'CANCELLED' AND CancellationReason IS NULL AND CancellationNotes IS NULL AND CancelledDate IS NULL)
+        ),
+
+    CONSTRAINT CHK_PaymentDate_Only_When_Paid
+        CHECK (
+            (PaymentStatus = 'PAID' AND PaymentDate IS NOT NULL) OR
+            (PaymentStatus != 'PAID' AND PaymentDate IS NULL)
         )
 );
 GO
@@ -134,6 +142,15 @@ CREATE TABLE SalesDetails (
 ); 
 GO
 
+CREATE TABLE DeliveryStatus(
+	DeliveryID INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+	SalesID INT FOREIGN KEY REFERENCES Sales(SalesID),
+	DeliveryStatus CHAR(20) CHECK (DeliveryStatus IN ('Delivered','Returned to Sender','Order Placed')),
+
+	CONSTRAINT One_Delivery_Per_Sale UNIQUE (SalesID),
+);
+GO
+
 CREATE TABLE CommissionRates (
 	RateID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	RoleInDepartment VARCHAR(50) NOT NULL CHECK (RoleInDepartment IN ('Team Lead','Member')),
@@ -150,6 +167,6 @@ CREATE TABLE Commission (
 	SalesAmount DECIMAL (10,2) NOT NULL,
 	CommissionRate DECIMAL (5,2) NOT NULL,
 	CommissionAmount DECIMAL(10,2) NOT NULL,
-	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID),
+	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID)
 );
 GO
