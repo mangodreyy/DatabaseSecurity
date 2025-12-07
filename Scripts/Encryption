@@ -1,4 +1,4 @@
--- TDE [Database Encryption] -- 
+------------	TDE [Database Encryption]		------------ 
 use master;
 create master key encryption by password = 'DBS_G17_Submission';
 
@@ -8,7 +8,4 @@ use DBS_G17;
 create database encryption key with algorithm = AES_256
 encryption by server certificate DBS_G17;
 
--- set the encryption for lab1 on, so that if ppl try to steal the database they cant without the cert
 alter database DBS_G17 set encryption on;
-
-OTHER ENCRYPTION CAN ADD UNDER HERE LATER
