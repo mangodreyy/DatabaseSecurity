@@ -21,7 +21,7 @@ CREATE TABLE Employees (
 	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100),
-	Phone NVARCHAR(20) NOT NULL,
+	Phone NVARCHAR(20) NOT NULL UNIQUE,
 	MaritialStatus VARCHAR(50) CHECK (MaritialStatus IN ('Single','Married')),
 	EmergencyContact NVARCHAR(20) NOT NULL,
 	Relationship VARCHAR(50) CHECK (Relationship IN ('Father', 'Mother','Spouse','Siblings')),
