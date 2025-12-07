@@ -42,7 +42,7 @@ GO
 CREATE TABLE Customers (
 	CustID VARCHAR(5) NOT NULL PRIMARY KEY,
 	CustName varchar(100) NOT NULL,
-	Phone varchar(20),
+	Phone varchar(20) NOT NULL UNIQUE,
 	Email varchar(200),
 	Address varchar(255)
 );
