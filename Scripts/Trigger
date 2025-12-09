@@ -1,0 +1,55 @@
+------------			 Trigger				------------
+-- Create Trigger: Only Admin can INSERT SALESv
+CREATE TRIGGER trg_CheckAdminOnSalesInsert
+ON Sales
+INSTEAD OF INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Check if any inserted employee is not from ADMIN department
+    IF EXISTS (
+        SELECT 1 
+        FROM inserted i
+        INNER JOIN Employees e ON i.EmployeeID = e.EmployeeID
+        WHERE e.DepartmentID != 'ADMIN'
+    )
+    BEGIN
+        RAISERROR('Error: Only employees from ADMIN department can create sales records.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+    
+    -- If all employees are ADMIN, proceed with insert
+    INSERT INTO Sales (
+        AgentID, 
+        CustID, 
+        EmployeeID, 
+        TotalAmount, 
+        SalesDate, 
+        PaymentStatus, 
+        PaymentMethod, 
+        PaymentDate,
+        DeliveryDate,
+        DeliveryAddress,
+        CancellationReason,
+        CancellationNotes,  -- Added
+        CancelledDate
+    )
+    SELECT 
+        AgentID, 
+        CustID, 
+        EmployeeID, 
+        TotalAmount, 
+        SalesDate, 
+        PaymentStatus, 
+        PaymentMethod, 
+        PaymentDate,
+        DeliveryDate,
+        DeliveryAddress,
+        CancellationReason,
+        CancellationNotes,  -- Added
+        CancelledDate
+    FROM inserted;
+END
+GO
