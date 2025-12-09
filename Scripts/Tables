@@ -22,11 +22,15 @@ CREATE TABLE Employees (
 	FullName VARCHAR(100) NOT NULL,
 	Email NVARCHAR(100) NOT NULL UNIQUE,
 	Phone NVARCHAR(20) NOT NULL UNIQUE ,
+	SalaryPerMonth DECIMAL(10,2) NOT NULL,
+	BankAccountNumber VARCHAR(20) NOT NULL,
 	MaritialStatus VARCHAR(50) CHECK (MaritialStatus IN ('Single','Married')),
 	EmergencyContact NVARCHAR(20) NOT NULL,
 	Relationship VARCHAR(50) CHECK (Relationship IN ('Father', 'Mother','Spouse','Siblings')),
-	Address NVARCHAR (255),
+	Address NVARCHAR(255),
 	CreatedAt DATETIME DEFAULT GETDATE()
+
+	CONSTRAINT CHK_BankAccountNumber_Format CHECK (BankAccountNumber NOT LIKE '%[^0-9]%')
 );
 GO
 
@@ -107,14 +111,16 @@ CREATE TABLE Sales (
     SalesID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
     CustID INT NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
+    EmployeeID INT NOT NULL FOREIGN KEY REFERENCES Employees(EmployeeID),
     TotalAmount DECIMAL(10,2) NOT NULL,
     SalesDate DATETIME DEFAULT GETDATE(),
     PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
     PaymentMethod CHAR(50) CHECK (PaymentMethod IN ('Online Banking','E-Wallet','Credit Card','CashOnDelivery')),
-	PaymentDate DATETIME,
-	DeliveryDate DATETIME NOT NULL,
+    PaymentDate DATETIME,
+    DeliveryDate DATETIME NOT NULL,
     DeliveryAddress NVARCHAR(255),
     CancellationReason VARCHAR(50) CHECK (CancellationReason IN (
+        'Late Payment (Order Rejected)',
         'Customer Request',
         'Payment Failed',
         'Out of Stock',
@@ -122,6 +128,7 @@ CREATE TABLE Sales (
         'Wrong Address',
         'Other'
     )) NULL,
+    CancellationNotes NVARCHAR(255) NULL,  -- Added
     CancelledDate DATETIME NULL,
     
     -- Constraint: Cancellation fields can only be filled when status is CANCELLED
@@ -130,11 +137,19 @@ CREATE TABLE Sales (
             (PaymentStatus = 'CANCELLED' AND CancellationReason IS NOT NULL) OR
             (PaymentStatus != 'CANCELLED' AND CancellationReason IS NULL AND CancellationNotes IS NULL AND CancelledDate IS NULL)
         ),
-
+    
+    -- Constraint: PaymentDate can only be filled when status is PAID
     CONSTRAINT CHK_PaymentDate_Only_When_Paid
         CHECK (
             (PaymentStatus = 'PAID' AND PaymentDate IS NOT NULL) OR
             (PaymentStatus != 'PAID' AND PaymentDate IS NULL)
+        ),
+    
+    -- Constraint: CancellationNotes is required when CancellationReason is 'Other'
+    CONSTRAINT CHK_CancellationNotes_Required_For_Other
+        CHECK (
+            (CancellationReason = 'Other' AND CancellationNotes IS NOT NULL) OR
+            (CancellationReason != 'Other')
         )
 );
 GO
