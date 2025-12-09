@@ -108,4 +108,541 @@ BEGIN
 END
 GO
 
+-- Change Sales Status [admin only]
+CREATE PROCEDURE ChangeSalesStatus
+	@SalesID INT,
+	@NewStatus CHAR(10),
+	@ChangedBy INT,
+	@ChangeReason NVARCHAR(255) = NULL,
+	@CancellationReason VARCHAR(50) = NULL,
+	@CancellationNotes NVARCHAR(255) = NULL  -- Added back
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @InvoiceNumber VARCHAR(20);
+	DECLARE @OldStatus CHAR(10);
+	DECLARE @EmployeeName VARCHAR(100);
+	DECLARE @EmployeeDept VARCHAR(10);
+	DECLARE @SalesDate DATETIME;
+	DECLARE @OldCancellationReason VARCHAR(50);
+	DECLARE @DaysSinceSale INT;
+	DECLARE @PaymentDate DATETIME;
+	
+	-- Validate SalesID exists
+	IF NOT EXISTS (SELECT 1 FROM Sales WHERE SalesID = @SalesID)
+	BEGIN
+		SET @InvoiceNumber = 'INV-' + RIGHT('00000' + CAST(@SalesID AS VARCHAR(5)), 5);
+		PRINT 'Error: Invoice ID ' + @InvoiceNumber + ' not found.';
+		RETURN;
+	END
+	
+	-- Validate Employee exists and is from ADMIN
+	SELECT @EmployeeName = FullName, @EmployeeDept = DepartmentID
+	FROM Employees 
+	WHERE EmployeeID = @ChangedBy;
+	
+	IF @EmployeeName IS NULL
+	BEGIN
+		PRINT 'Error: Employee ID ' + CAST(@ChangedBy AS VARCHAR(10)) + ' not found.';
+		RETURN;
+	END
+	
+	IF @EmployeeDept != 'ADMIN'
+	BEGIN
+		PRINT 'Error: Only ADMIN department employees can change sales status.';
+		PRINT 'Employee ' + @EmployeeName + ' is from ' + @EmployeeDept + ' department.';
+		RETURN;
+	END
+	
+	-- Validate new status
+	IF @NewStatus NOT IN ('PAID', 'PENDING', 'CANCELLED')
+	BEGIN
+		PRINT 'Error: Invalid payment status. Must be PAID, PENDING, or CANCELLED.';
+		RETURN;
+	END
+	
+	-- Get current status and details
+	SELECT 
+		@OldStatus = PaymentStatus,
+		@InvoiceNumber = 'INV-' + RIGHT('00000' + CAST(SalesID AS VARCHAR(5)), 5),
+		@SalesDate = SalesDate,
+		@PaymentDate = PaymentDate,
+		@OldCancellationReason = CancellationReason
+	FROM Sales 
+	WHERE SalesID = @SalesID;
+	
+	-- Check if status is actually changing
+	IF @OldStatus = @NewStatus
+	BEGIN
+		PRINT 'Warning: Invoice ' + @InvoiceNumber + ' is already ' + @NewStatus + '.';
+		PRINT 'No changes made.';
+		RETURN;
+	END
+	
+	-- RULE 1: PAID can only be changed to CANCELLED within 2 days
+	IF @OldStatus = 'PAID'
+	BEGIN
+		SET @DaysSinceSale = DATEDIFF(DAY, @PaymentDate, GETDATE());
+		
+		IF @NewStatus = 'CANCELLED' AND @DaysSinceSale <= 2
+		BEGIN
+			IF @CancellationReason IS NULL
+			BEGIN
+				PRINT 'Error: CancellationReason is required when changing PAID status to CANCELLED.';
+				RETURN;
+			END
+			-- Validate CancellationNotes for 'Other' reason
+			IF @CancellationReason = 'Other' AND @CancellationNotes IS NULL
+			BEGIN
+				PRINT 'Error: CancellationNotes is required when CancellationReason is ''Other''.';
+				RETURN;
+			END
+			PRINT 'Warning: Changing PAID status to CANCELLED (within 2-day window).';
+		END
+		ELSE IF @NewStatus = 'CANCELLED' AND @DaysSinceSale > 2
+		BEGIN
+			PRINT 'Error: Invoice ' + @InvoiceNumber + ' was paid ' + CAST(@DaysSinceSale AS VARCHAR(10)) + ' days ago.';
+			PRINT 'PAID invoices can only be cancelled within 2 days of payment.';
+			PRINT 'Payment date: ' + CONVERT(VARCHAR(20), @PaymentDate, 120);
+			PRINT 'Please contact your supervisor for refund procedures.';
+			RETURN;
+		END
+		ELSE
+		BEGIN
+			PRINT 'Error: PAID status can only be changed to CANCELLED (within 2 days).';
+			PRINT 'Cannot change PAID to ' + @NewStatus + '.';
+			RETURN;
+		END
+	END
+	
+	-- RULE 2: CANCELLED cannot be changed to anything
+	IF @OldStatus = 'CANCELLED'
+	BEGIN
+		PRINT 'Error: CANCELLED invoices cannot be changed.';
+		PRINT 'Current status: ' + @OldStatus;
+		RETURN;
+	END
+	
+	-- RULE 3: PENDING can be changed to PAID or CANCELLED
+	IF @OldStatus = 'PENDING' AND @NewStatus NOT IN ('PAID', 'CANCELLED')
+	BEGIN
+		PRINT 'Error: PENDING status can only be changed to PAID or CANCELLED.';
+		RETURN;
+	END
+	
+	-- Validate CANCELLED requires CancellationReason
+	IF @NewStatus = 'CANCELLED'
+	BEGIN
+		IF @CancellationReason IS NULL
+		BEGIN
+			PRINT 'Error: CancellationReason is required when changing status to CANCELLED.';
+			PRINT 'Valid reasons: Late Payment (Order Rejected), Customer Request, Payment Failed, Out of Stock, Duplicate Order, Wrong Address, Other';
+			RETURN;
+		END
+		
+		-- Validate CancellationNotes when CancellationReason is 'Other'
+		IF @CancellationReason = 'Other' AND @CancellationNotes IS NULL
+		BEGIN
+			PRINT 'Error: CancellationNotes is required when CancellationReason is ''Other''.';
+			PRINT 'Please provide additional details about the cancellation.';
+			RETURN;
+		END
+	END
+	
+	-- Begin Transaction
+	BEGIN TRANSACTION;
+	
+	BEGIN TRY
+		-- Update the Sales table based on new status
+		IF @NewStatus = 'PAID'
+		BEGIN
+			UPDATE Sales
+			SET PaymentStatus = @NewStatus,
+				PaymentDate = GETDATE()
+			WHERE SalesID = @SalesID;
+		END
+		ELSE IF @NewStatus = 'CANCELLED'
+		BEGIN
+			UPDATE Sales
+			SET PaymentStatus = @NewStatus,
+				CancellationReason = @CancellationReason,
+				CancellationNotes = @CancellationNotes,
+				CancelledDate = GETDATE(),
+				PaymentDate = NULL
+			WHERE SalesID = @SalesID;
+		END
+		ELSE IF @NewStatus = 'PENDING'
+		BEGIN
+			UPDATE Sales
+			SET PaymentStatus = @NewStatus,
+				PaymentDate = NULL
+			WHERE SalesID = @SalesID;
+		END
+		
+		-- Log the change in audit table
+		INSERT INTO SalesStatusAuditLog (
+			SalesID, ChangedBy, OldStatus, NewStatus, ChangeReason,
+			OldCancellationReason, NewCancellationReason, CancellationNotes
+		)
+		VALUES (
+			@SalesID, @ChangedBy, @OldStatus, @NewStatus, @ChangeReason,
+			@OldCancellationReason, @CancellationReason, @CancellationNotes
+		);
+		
+		-- Commit the transaction
+		COMMIT TRANSACTION;
+		
+		-- Success message
+		PRINT '✓ Success: Sales status updated for ' + @InvoiceNumber;
+		PRINT '----------------------------------------';
+		PRINT 'Changed by: ' + @EmployeeName + ' (ID: ' + CAST(@ChangedBy AS VARCHAR(10)) + ')';
+		PRINT 'Old Status: ' + @OldStatus;
+		PRINT 'New Status: ' + @NewStatus;
+		IF @NewStatus = 'PAID'
+			PRINT 'Payment Date: ' + CONVERT(VARCHAR(20), GETDATE(), 120);
+		IF @ChangeReason IS NOT NULL
+			PRINT 'Reason: ' + @ChangeReason;
+		IF @CancellationReason IS NOT NULL
+		BEGIN
+			PRINT 'Cancellation Reason: ' + @CancellationReason;
+			IF @CancellationNotes IS NOT NULL
+				PRINT 'Cancellation Notes: ' + @CancellationNotes;
+		END
+		IF @OldStatus = 'PAID' AND @NewStatus = 'CANCELLED'
+			PRINT '⚠️ Note: PAID invoice cancelled within 2-day window - Payment date cleared';
+		PRINT 'Changed at: ' + CONVERT(VARCHAR(20), GETDATE(), 120);
+		PRINT '----------------------------------------';
+		
+	END TRY
+	BEGIN CATCH
+		ROLLBACK TRANSACTION;
+		PRINT 'Error: Failed to update sales status.';
+		PRINT 'Error Message: ' + ERROR_MESSAGE();
+	END CATCH
+END
+GO
 
+-- view department employees [hr/admin]
+
+-- Monthly Sales Report for Finance Department [finance/acc]
+CREATE PROCEDURE GetMonthlySalesReport
+    @Year INT = NULL,
+    @Month INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Default to current year and month if not provided
+    IF @Year IS NULL
+        SET @Year = YEAR(GETDATE());
+    
+    IF @Month IS NULL
+        SET @Month = MONTH(GETDATE());
+    
+    -- Validate month
+    IF @Month < 1 OR @Month > 12
+    BEGIN
+        PRINT 'Error: Month must be between 1 and 12.';
+        RETURN;
+    END
+    
+    DECLARE @MonthName VARCHAR(20) = DATENAME(MONTH, DATEFROMPARTS(@Year, @Month, 1));
+    
+    PRINT '========================================';
+    PRINT 'MONTHLY SALES REPORT - FINANCE SUMMARY';
+    PRINT '========================================';
+    PRINT 'Report Date: ' + CONVERT(VARCHAR(20), GETDATE(), 120);
+    PRINT 'Period: ' + @MonthName + ' ' + CAST(@Year AS VARCHAR(4));
+    PRINT '========================================';
+    PRINT '';
+    
+    -- 1. OVERALL SUMMARY
+    PRINT '--- MONTHLY INCOME SUMMARY ---';
+    SELECT 
+        COUNT(s.SalesID) AS TotalSales,
+        SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN 1 ELSE 0 END) AS PaidSales,
+        SUM(CASE WHEN s.PaymentStatus = 'PENDING' THEN 1 ELSE 0 END) AS PendingSales,
+        SUM(CASE WHEN s.PaymentStatus = 'CANCELLED' THEN 1 ELSE 0 END) AS CancelledSales,
+        FORMAT(SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END), 'N2') AS TotalIncome_Paid,
+        FORMAT(SUM(CASE WHEN s.PaymentStatus = 'PENDING' THEN s.TotalAmount ELSE 0 END), 'N2') AS PendingAmount,
+        FORMAT(SUM(CASE WHEN s.PaymentStatus = 'CANCELLED' THEN s.TotalAmount ELSE 0 END), 'N2') AS CancelledAmount,
+        FORMAT(SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END) + 
+               SUM(CASE WHEN s.PaymentStatus = 'PENDING' THEN s.TotalAmount ELSE 0 END), 'N2') AS ExpectedTotalIncome
+    FROM Sales s
+    WHERE YEAR(s.SalesDate) = @Year
+        AND MONTH(s.SalesDate) = @Month;
+    
+    PRINT '';
+    
+    -- 2. TOP 3 AGENTS
+    PRINT '--- TOP 3 AGENTS BY SALES ---';
+    SELECT TOP 3
+        a.AgentID,
+        a.FullName AS AgentName,
+        a.Region,
+        COUNT(s.SalesID) AS TotalSales,
+        SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN 1 ELSE 0 END) AS PaidSales,
+        FORMAT(SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END), 'N2') AS TotalRevenue
+    FROM Sales s
+    INNER JOIN Agents a ON s.AgentID = a.AgentID
+    WHERE YEAR(s.SalesDate) = @Year
+        AND MONTH(s.SalesDate) = @Month
+    GROUP BY a.AgentID, a.FullName, a.Region
+    ORDER BY SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END) DESC;
+    
+    PRINT '';
+    
+    -- 3. PENDING INVOICES DETAILS
+    DECLARE @PendingCount INT;
+    SELECT @PendingCount = COUNT(*) 
+    FROM Sales 
+    WHERE YEAR(SalesDate) = @Year 
+        AND MONTH(SalesDate) = @Month 
+        AND PaymentStatus = 'PENDING';
+    
+    IF @PendingCount > 0
+    BEGIN
+        PRINT '--- PENDING INVOICES (' + CAST(@PendingCount AS VARCHAR(10)) + ' invoices) ---';
+        SELECT 
+            'INV-' + RIGHT('00000' + CAST(s.SalesID AS VARCHAR(5)), 5) AS InvoiceNumber,
+            s.SalesID,
+            CONVERT(VARCHAR(10), s.SalesDate, 120) AS SalesDate,
+            c.CustName AS Customer,
+            a.FullName AS Agent,
+            FORMAT(s.TotalAmount, 'N2') AS Amount,
+            DATEDIFF(DAY, s.SalesDate, GETDATE()) AS DaysPending,
+            e.FullName AS ResponsibleEmployee,
+            e.Phone AS EmployeeContact
+        FROM Sales s
+        INNER JOIN Customers c ON s.CustID = c.CustID
+        INNER JOIN Agents a ON s.AgentID = a.AgentID
+        INNER JOIN Employees e ON s.EmployeeID = e.EmployeeID
+        WHERE YEAR(s.SalesDate) = @Year
+            AND MONTH(s.SalesDate) = @Month
+            AND s.PaymentStatus = 'PENDING'
+        ORDER BY s.SalesDate ASC;
+    END
+    ELSE
+    BEGIN
+        PRINT '--- PENDING INVOICES ---';
+        PRINT 'No pending invoices for this month.';
+    END
+    
+    PRINT '';
+    
+    -- 4. PAYMENT METHOD BREAKDOWN (Summary only)
+    PRINT '--- PAYMENT METHOD BREAKDOWN ---';
+    SELECT 
+        s.PaymentMethod,
+        COUNT(s.SalesID) AS TotalOrders,
+        SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN 1 ELSE 0 END) AS PaidOrders,
+        FORMAT(SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END), 'N2') AS TotalRevenue
+    FROM Sales s
+    WHERE YEAR(s.SalesDate) = @Year
+        AND MONTH(s.SalesDate) = @Month
+    GROUP BY s.PaymentMethod
+    ORDER BY SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END) DESC;
+    
+    PRINT '';
+    
+    -- 5. CANCELLATION SUMMARY (if any)
+    DECLARE @CancelledCount INT;
+    SELECT @CancelledCount = COUNT(*) 
+    FROM Sales 
+    WHERE YEAR(SalesDate) = @Year 
+        AND MONTH(SalesDate) = @Month 
+        AND PaymentStatus = 'CANCELLED';
+    
+    IF @CancelledCount > 0
+    BEGIN
+        PRINT '--- CANCELLATION SUMMARY ---';
+        SELECT 
+            s.CancellationReason,
+            COUNT(s.SalesID) AS TotalCancelled,
+            FORMAT(SUM(s.TotalAmount), 'N2') AS LostRevenue
+        FROM Sales s
+        WHERE YEAR(s.SalesDate) = @Year
+            AND MONTH(s.SalesDate) = @Month
+            AND s.PaymentStatus = 'CANCELLED'
+        GROUP BY s.CancellationReason
+        ORDER BY COUNT(s.SalesID) DESC;
+    END
+    ELSE
+    BEGIN
+        PRINT '--- CANCELLATION SUMMARY ---';
+        PRINT 'No cancelled sales for this month.';
+    END
+    
+    PRINT '';
+    PRINT '========================================';
+    PRINT 'END OF REPORT';
+    PRINT '========================================';
+END
+GO
+
+-- Register New Employee [HR Department]
+CREATE PROCEDURE RegisterNewEmployee
+    @DepartmentID VARCHAR(10),
+    @RoleInDepartment VARCHAR(50),
+    @FullName VARCHAR(100),
+    @Email NVARCHAR(100),
+    @Phone NVARCHAR(20),
+    @SalaryPerMonth DECIMAL(10,2),
+    @BankAccountNumber VARCHAR(20),
+    @MaritialStatus VARCHAR(50),
+    @EmergencyContact NVARCHAR(20),
+    @Relationship VARCHAR(50),
+    @Address NVARCHAR(255),
+    @RegisteredBy INT  -- HR employee who is registering this employee
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @NewEmployeeID INT;
+    DECLARE @RegisteredByName VARCHAR(100);
+    DECLARE @RegisteredByDept VARCHAR(10);
+    
+    -- Validate the person registering is from HR department
+    SELECT @RegisteredByName = FullName, @RegisteredByDept = DepartmentID
+    FROM Employees
+    WHERE EmployeeID = @RegisteredBy;
+    
+    IF @RegisteredByName IS NULL
+    BEGIN
+        PRINT 'Error: Registering employee ID ' + CAST(@RegisteredBy AS VARCHAR(10)) + ' not found.';
+        RETURN;
+    END
+    
+    IF @RegisteredByDept != 'HR'
+    BEGIN
+        PRINT 'Error: Only HR department employees can register new employees.';
+        PRINT 'Employee ' + @RegisteredByName + ' is from ' + @RegisteredByDept + ' department.';
+        RETURN;
+    END
+    
+    -- Validate Department exists
+    IF NOT EXISTS (SELECT 1 FROM Department WHERE DepartmentID = @DepartmentID)
+    BEGIN
+        PRINT 'Error: Department ID ''' + @DepartmentID + ''' does not exist.';
+        PRINT 'Valid departments: DBA, SDEV, ACC, HR, MKT, ADMIN, AGENT';
+        RETURN;
+    END
+    
+    -- Validate RoleInDepartment
+    IF @RoleInDepartment NOT IN ('Manager', 'Team Member')
+    BEGIN
+        PRINT 'Error: Invalid role. Must be ''Manager'' or ''Team Member''.';
+        RETURN;
+    END
+    
+    -- Validate Email is unique
+    IF EXISTS (SELECT 1 FROM Employees WHERE Email = @Email)
+    BEGIN
+        PRINT 'Error: Email address ''' + @Email + ''' is already registered.';
+        RETURN;
+    END
+    
+    -- Validate Phone is unique
+    IF EXISTS (SELECT 1 FROM Employees WHERE Phone = @Phone)
+    BEGIN
+        PRINT 'Error: Phone number ''' + @Phone + ''' is already registered.';
+        RETURN;
+    END
+    
+    -- Validate Marital Status
+    IF @MaritialStatus NOT IN ('Single', 'Married')
+    BEGIN
+        PRINT 'Error: Invalid marital status. Must be ''Single'' or ''Married''.';
+        RETURN;
+    END
+    
+    -- Validate Relationship
+    IF @Relationship NOT IN ('Father', 'Mother', 'Spouse', 'Siblings')
+    BEGIN
+        PRINT 'Error: Invalid relationship. Must be ''Father'', ''Mother'', ''Spouse'', or ''Siblings''.';
+        RETURN;
+    END
+    
+    -- Validate Bank Account Number (only digits)
+    IF @BankAccountNumber LIKE '%[^0-9]%'
+    BEGIN
+        PRINT 'Error: Bank account number must contain only numeric digits.';
+        RETURN;
+    END
+    
+    -- Validate Salary is positive
+    IF @SalaryPerMonth <= 0
+    BEGIN
+        PRINT 'Error: Salary must be greater than 0.';
+        RETURN;
+    END
+    
+    -- Begin Transaction
+    BEGIN TRANSACTION;
+    
+    BEGIN TRY
+        -- Insert new employee
+        INSERT INTO Employees (
+            DepartmentID,
+            Status,
+            RoleInDepartment,
+            FullName,
+            Email,
+            Phone,
+            SalaryPerMonth,
+            BankAccountNumber,
+            MaritialStatus,
+            EmergencyContact,
+            Relationship,
+            Address,
+            CreatedAt
+        )
+        VALUES (
+            @DepartmentID,
+            'ACTIVE',  -- Default status
+            @RoleInDepartment,
+            @FullName,
+            @Email,
+            @Phone,
+            @SalaryPerMonth,
+            @BankAccountNumber,
+            @MaritialStatus,
+            @EmergencyContact,
+            @Relationship,
+            @Address,
+            GETDATE()
+        );
+        
+        -- Get the new employee ID
+        SET @NewEmployeeID = SCOPE_IDENTITY();
+        
+        -- Commit transaction
+        COMMIT TRANSACTION;
+        
+        -- Success message
+        PRINT '========================================';
+        PRINT '✓ NEW EMPLOYEE REGISTERED SUCCESSFULLY';
+        PRINT '========================================';
+        PRINT 'Employee ID: ' + CAST(@NewEmployeeID AS VARCHAR(10));
+        PRINT 'Full Name: ' + @FullName;
+        PRINT 'Department: ' + @DepartmentID;
+        PRINT 'Role: ' + @RoleInDepartment;
+        PRINT 'Email: ' + @Email;
+        PRINT 'Phone: ' + @Phone;
+        PRINT 'Status: ACTIVE';
+        PRINT 'Registered By: ' + @RegisteredByName + ' (ID: ' + CAST(@RegisteredBy AS VARCHAR(10)) + ')';
+        PRINT 'Registered At: ' + CONVERT(VARCHAR(20), GETDATE(), 120);
+        PRINT '========================================';
+        
+        -- Return the new employee ID
+        SELECT @NewEmployeeID AS NewEmployeeID;
+        
+    END TRY
+    BEGIN CATCH
+        -- Rollback on error
+        ROLLBACK TRANSACTION;
+        
+        PRINT 'Error: Failed to register new employee.';
+        PRINT 'Error Message: ' + ERROR_MESSAGE();
+    END CATCH
+END
+GO
