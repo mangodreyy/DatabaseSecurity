@@ -1,0 +1,158 @@
+
+INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
+('Team Lead',7.50),
+('Member',5.00);
+GO
+
+--  Employees Table
+INSERT INTO Employees (DepartmentID, Status, RoleInDepartment, FullName, Email, Phone, SalaryPerMonth, BankAccountNumber, MaritialStatus, EmergencyContact, Relationship, Address)
+VALUES 
+    ('DBA', 'ACTIVE', 'Manager',     'Leong Ciao Shi', 'leong@gmail.com', '+601111111111', 8000.00, '1111111111', 'Married', '+601111111112', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Teng Yi Ling', 'teng@gmail.com', '+601111111113', 4500.00, '1111111113', 'Married', '+601111111114', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Shifra Shuaib Ali', 'shifra@gmail.com', '+601111111115', 4000.00, '1111111115', 'Single', '+601111111116', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Minhal Ali', 'minhal@gmail.com', '+601111111117', 4000.00, '1111111117', 'Single', '+601111111118', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Ruba Mahdi Abdulsalam Mahdi', 'ruba@gmail.com', '+601111111119', 4200.00, '1111111119', 'Married', '+601111111110', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+   
+    ('SDEV', 'ACTIVE', 'Manager',     'Mohammed Ismail Elbagir Hussein', 'hamadha@gmail.com', '+601111111121', 8500.00, '1111111121', 'Married', '+601111111122', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('SDEV', 'ACTIVE', 'Team Member', 'Musab Salah Adam Younis', 'musab@gmail.com', '+601111111123', 5000.00, '1111111123', 'Married', '+601111111124', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('SDEV', 'ACTIVE', 'Team Member', 'Liu Yi Xian', 'liu@gmail.com', '+601111111125', 4800.00, '1111111125', 'Married', '+601111111126', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('SDEV', 'ACTIVE', 'Team Member', 'Mah Qing Xiang', 'mah@gmail.com', '+601111111127', 4500.00, '1111111127', 'Single', '+601111111128', 'Father', 'BukitJalil, Kuala Lumpur'),
+   
+    ('ACC', 'ACTIVE', 'Manager',     'Poh Yu Zhe', 'poh@gmail.com', '+601111111131', 7500.00, '1111111131', 'Married', '+601111111132', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('ACC', 'ACTIVE', 'Team Member', 'Lim Shin Er', 'lim@gmail.com', '+601111111133', 4200.00, '1111111133', 'Single', '+601111111134', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('ACC', 'ACTIVE', 'Team Member', 'Lai Wei Quan', 'lai@gmail.com', '+601111111135', 4300.00, '1111111135', 'Married', '+601111111136', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('ACC', 'ACTIVE', 'Team Member', 'Sim Yee Cong', 'cong@gmail.com', '+601111111137', 4000.00, '1111111137', 'Single', '+601111111138', 'Father', 'BukitJalil, Kuala Lumpur'),
+    
+    ('HR', 'ACTIVE', 'Manager',     'Amjad Alrifaai', 'amjad@gmail.com', '+601111111141', 7800.00, '1111111141', 'Married', '+601111111142', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Harrison Matthew Widjaja', 'matthew@gmail.com', '+601111111143', 4500.00, '1111111143', 'Single', '+601111111144', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Tan Chang Yau', 'tan@gmail.com', '+601111111145', 4200.00, '1111111145', 'Single', '+601111111146', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Venus Ong Jin Wen', 'venus@gmail.com', '+601111111147', 4400.00, '1111111147', 'Married', '+601111111148', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Viishnu Sree Ganesh', 'viishnu@gmail.com', '+601111111149', 4300.00, '1111111149', 'Single', '+601111111140', 'Father', 'BukitJalil, Kuala Lumpur'),
+    
+    ('MKT', 'ACTIVE', 'Manager',     'Wan Yi Zhi', 'wan@gmail.com', '+601111111151', 7800.00, '1111111151', 'Married', '+601111111152', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Miyoko Pang Zi Xuan', 'miyoko@gmail.com', '+601111111153', 4400.00, '1111111153', 'Single', '+601111111154', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Lau Yi Jing', 'yijing@gmail.com', '+601111111155', 4200.00, '1111111155', 'Single', '+601111111156', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Cerise Loo Lok Yu', 'cerise@gmail.com', '+601111111157', 4100.00, '1111111157', 'Single', '+601111111158', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Anson Cheah Yen Xun', 'anson@gmail.com', '+601111111159', 4000.00, '1111111159', 'Single', '+601111111150', 'Father', 'BukitJalil, Kuala Lumpur'),
+
+    ('ADMIN', 'ACTIVE', 'Manager',     'Eric Ran Xin Zhen', 'eric@gmail.com', '+601111111161', 7800.00, '1111111161', 'Married', '+601111111162', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('ADMIN', 'ACTIVE', 'Team Member', 'Lim Cai Yun', 'limcai@gmail.com', '+601111111163', 4300.00, '1111111163', 'Single', '+601111111164', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('ADMIN', 'ACTIVE', 'Team Member', 'Tan Wei Xian', 'tanwei@gmail.com', '+601111111165', 4200.00, '1111111165', 'Single', '+601111111166', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('ADMIN', 'ACTIVE', 'Team Member', 'Wong Pin Xue', 'wongpin@gmail.com', '+601111111167', 4100.00, '1111111167', 'Single', '+601111111168', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    
+    ('AGENT', 'ACTIVE', 'Manager',     'Ahmed Mohamedosman Ahmed Omer', 'ahmed@gmail.com', '+601111111171', 7500.00, '1111111171', 'Single', '+601111111172', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Shady Ehab Assad Ibrahim', 'shady@gmail.com', '+601111111173', 4500.00, '1111111173', 'Married', '+601111111174', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Mohammed Rasheed Yehia Al Haddad', 'rasheed@gmail.com', '+601111111175', 4300.00, '1111111175', 'Single', '+601111111176', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Mohamed Abdurrazag Jaber Seklani', 'seklani@gmail.com', '+601111111177', 4200.00, '1111111177', 'Single', '+601111111178', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Mahmoud Samy Aly Ibrahim', 'samy@gmail.com', '+601111111179', 4100.00, '1111111179', 'Single', '+601111111170', 'Siblings', 'BukitJalil, Kuala Lumpur');
+GO
+
+SELECT * FROM Employees
+
+-- Agents Table
+
+INSERT INTO Agents(AgentID, RoleInDepartment, Region) VALUES
+(29, 'Team Lead', 'BukitJalil'),    -- Ahmed (Manager becomes Team Lead)
+(30, 'Member', 'Puchong'),          -- Shady
+(31, 'Member', 'PetalingJaya'),     -- Mohammed Rasheed
+(32, 'Member', 'Klang'),            -- Mohamed Abdurrazag
+(33, 'Member', 'Shah Alam');        -- Mahmoud
+GO
+
+SELECT * FROM Agents
+
+-- Customers Table
+
+INSERT INTO Customers (CompanyName, CompanyRegNo, PersonInCharge, PersonInCharge_Contact, CompanyPhone, Email, CompanyAddress, BusinessType, Status, RegisteredBy)
+VALUES
+('Golden Dragon Restaurant', 'SSM201234567', 'Lim Ah Kow', '+60122001001', '+60322001001', 'contact@goldendragon.com', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Restaurant', 'Active', 29),
+('Grand Plaza Hotel', 'SSM201234568', 'Sarah Wong', '+60122001002', '+60322001002', 'info@grandplaza.com', '45 KLCC, Kuala Lumpur', 'Hotel', 'Active', 30),
+('Cozy Corner Cafe', 'SSM201234569', 'Ahmad bin Hassan', '+60122001003', '+60322001003', 'hello@cozycorner.com', '78 Bangsar, Kuala Lumpur', 'Cafe', 'Active', 31),
+('MegaMart Supermarket', 'SSM201234570', 'Tan Siew Li', '+60122001004', '+60322001004', 'support@megamart.com', '90 Petaling Jaya, Selangor', 'Supermarket', 'Active', 32),
+('Elite Catering Services', 'SSM201234571', 'Kumar Raj', '+60122001005', '+60322001005', 'orders@elitecatering.com', '12 Shah Alam, Selangor', 'Catering', 'Active', 33),
+('Happy Eats Restaurant', 'SSM201234572', 'Lee Mei Ling', '+60122001006', '+60322001006', 'hello@happyeats.com', '34 Cheras, Kuala Lumpur', 'Restaurant', 'Active', 29),
+('Sunrise Hotel', 'SSM201234573', 'David Tan', '+60122001007', '+60322001007', 'reservations@sunrise.com', '56 Puchong, Selangor', 'Hotel', 'Active', 30),
+('Fresh Mart', 'SSM201234574', 'Siti Nurhaliza', '+60122001008', '+60322001008', 'info@freshmart.com', '67 Subang Jaya, Selangor', 'Retailer', 'Active', 31),
+('Tasty Bites Cafe', 'SSM201234575', 'Chen Wei', '+60122001009', '+60322001009', 'contact@tastybites.com', '89 Mont Kiara, Kuala Lumpur', 'Cafe', 'Active', 32),
+('Supreme Catering', 'SSM201234576', 'Raj Kumar', '+60122001010', '+60322001010', 'bookings@supreme.com', '101 Klang, Selangor', 'Catering', 'Active', 33);
+GO
+
+SELECT * FROM Customers
+
+-- App user table
+
+INSERT INTO AppUsers (Username, PasswordHash, UserType, EmployeeID, CustID, IsActive)
+VALUES
+
+-- Employee Accpunts
+('ahmed.admin', CAST('dummyhash001' AS VARBINARY(256)), 'EMPLOYEE', 29, NULL, 1),
+('eric.admin', CAST('dummyhash002' AS VARBINARY(256)), 'EMPLOYEE', 25, NULL, 1),
+('amjad.hr', CAST('dummyhash003' AS VARBINARY(256)), 'EMPLOYEE', 14, NULL, 1),
+('poh.acc', CAST('dummyhash004' AS VARBINARY(256)), 'EMPLOYEE', 10, NULL, 1),
+('wan.mkt', CAST('dummyhash005' AS VARBINARY(256)), 'EMPLOYEE', 19, NULL, 1),
+
+-- Customer accounts
+('goldendragon', CAST('custhash001' AS VARBINARY(256)), 'CUSTOMER', NULL, 1, 1),
+('grandplaza', CAST('custhash002' AS VARBINARY(256)), 'CUSTOMER', NULL, 2, 1),
+('cozycorner', CAST('custhash003' AS VARBINARY(256)), 'CUSTOMER', NULL, 3, 1),
+('megamart', CAST('custhash004' AS VARBINARY(256)), 'CUSTOMER', NULL, 4, 1),
+('elitecatering', CAST('custhash005' AS VARBINARY(256)), 'CUSTOMER', NULL, 5, 1);
+GO
+
+-- Products Table
+INSERT INTO Products (ProductName, ProductDescription, BasePrice, SellingPrice)
+VALUES
+('Premium Rice 25kg', 'High-quality Thai Jasmine rice', 80.00, 120.00),
+('Cooking Oil 5L', 'Refined palm cooking oil', 25.00, 35.00),
+('All-Purpose Flour 1kg', 'Bakery grade wheat flour', 3.50, 5.00),
+('White Sugar 10kg', 'Fine granulated white sugar', 35.00, 50.00),
+('Table Salt 1kg', 'Iodized table salt', 1.50, 2.50),
+('Black Pepper 500g', 'Ground black pepper', 15.00, 22.00),
+('Soy Sauce 5L', 'Premium dark soy sauce', 18.00, 28.00),
+('Oyster Sauce 2L', 'Quality oyster sauce', 12.00, 18.00),
+('Canned Tomatoes 400g', 'Italian peeled tomatoes', 3.00, 5.00),
+('Dried Pasta 500g', 'Italian spaghetti pasta', 4.00, 6.50),
+('Olive Oil 1L', 'Extra virgin olive oil', 25.00, 38.00),
+('Chicken Stock 1L', 'Concentrated chicken stock', 8.00, 12.00),
+('Garlic Powder 200g', 'Pure garlic powder', 6.00, 9.00),
+('Onion Powder 200g', 'Pure onion powder', 5.50, 8.50),
+('Paprika 100g', 'Smoked paprika powder', 7.00, 11.00),
+('Chili Powder 200g', 'Hot chili powder', 6.50, 10.00),
+('Cumin Seeds 250g', 'Whole cumin seeds', 8.00, 12.50),
+('Turmeric Powder 200g', 'Pure turmeric powder', 7.50, 11.50),
+('Cinnamon Sticks 100g', 'Ceylon cinnamon sticks', 12.00, 18.00),
+('Bay Leaves 50g', 'Dried bay leaves', 5.00, 8.00);
+GO
+
+-- Sales Table
+SELECT * FROM Sales;
+DELETE FROM SalesDetails;
+DELETE FROM Sales;
+GO
+
+
+INSERT INTO Sales (AgentID, CustID, EmployeeID, TotalAmount, SalesDate, PaymentStatus, PaymentMethod, PaymentDate, DeliveryDate, DeliveryAddress)
+VALUES
+-- Paid orders
+(29, 1, 25, 2450.00, '2025-01-15 10:30:00', 'PAID', 'Online Banking', '2025-01-15 14:20:00', '2025-01-17 09:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur'),
+(30, 2, 25, 5600.00, '2025-01-20 09:15:00', 'PAID', 'Credit Card', '2025-01-20 11:30:00', '2025-01-22 10:00:00', '45 KLCC, Kuala Lumpur'),
+(31, 3, 26, 1280.00, '2025-02-01 14:00:00', 'PAID', 'E-Wallet', '2025-02-01 15:45:00', '2025-02-03 11:00:00', '78 Bangsar, Kuala Lumpur'),
+(32, 6, 26, 3450.00, '2025-02-10 11:20:00', 'PAID', 'Online Banking', '2025-02-10 16:00:00', '2025-02-12 10:00:00', '34 Cheras, Kuala Lumpur'),
+(33, 10, 27, 4200.00, '2025-02-15 13:45:00', 'PAID', 'Credit Card', '2025-02-15 17:30:00', '2025-02-17 09:00:00', '101 Klang, Selangor'),
+
+-- Pending orders
+(29, 4, 26, 8900.00, '2025-11-05 11:00:00', 'PENDING', 'CashOnDelivery', NULL, '2025-11-07 08:00:00', '90 Petaling Jaya, Selangor'),
+(30, 5, 27, 3200.00, '2025-12-05 16:30:00', 'PENDING', 'Online Banking', NULL, '2025-12-08 09:00:00', '12 Shah Alam, Selangor'),
+(31, 8, 27, 2100.00, '2025-12-07 10:15:00', 'PENDING', 'E-Wallet', NULL, '2025-12-10 11:00:00', '67 Subang Jaya, Selangor');
+GO
+
+-- Cancelled orders
+INSERT INTO Sales (AgentID, CustID, EmployeeID, TotalAmount, SalesDate, PaymentStatus, PaymentMethod, PaymentDate, DeliveryDate, DeliveryAddress, CancellationReason, CancellationNotes, CancelledDate)
+VALUES
+(32, 1, 25, 1500.00, '2024-12-25 13:00:00', 'CANCELLED', 'Credit Card', NULL, '2024-12-27 10:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Customer Request', 'Customer changed order requirements', '2024-12-26 09:30:00'),
+(33, 7, 25, 2800.00, '2024-12-30 15:20:00', 'CANCELLED', 'Online Banking', NULL, '2025-01-01 09:00:00', '56 Puchong, Selangor', 'Payment Failed', NULL, '2024-12-31 11:00:00');
+GO
+
+-- Verify Sales 
+SELECT SalesID, CustID, PaymentStatus, TotalAmount FROM Sales ORDER BY SalesID;
+GO
