@@ -199,3 +199,91 @@ CREATE TABLE Commission (
 	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID)
 );
 GO
+
+
+-- AUDIT TABLES (NEED REVIEW AND DISCUSSION LATER)
+-- Sales Status Audit Log (Required by  ChangeSalesStatus procedure)
+CREATE TABLE SalesStatusAuditLog (
+    AuditID INT IDENTITY(1,1) PRIMARY KEY,
+    SalesID INT NOT NULL,
+    ChangedBy INT NOT NULL,
+    OldStatus CHAR(10) NOT NULL,
+    NewStatus CHAR(10) NOT NULL,
+    ChangeReason NVARCHAR(255),
+    OldCancellationReason VARCHAR(50),
+    NewCancellationReason VARCHAR(50),
+    CancellationNotes NVARCHAR(255),
+    ChangedAt DATETIME DEFAULT GETDATE(),
+    
+    FOREIGN KEY (SalesID) REFERENCES Sales(SalesID),
+    FOREIGN KEY (ChangedBy) REFERENCES Employees(EmployeeID)
+);
+GO
+
+-- Employee Audit Log (Track employee changes - INSERT, UPDATE, DELETE)
+CREATE TABLE EmployeeAuditLog (
+    AuditID INT IDENTITY(1,1) PRIMARY KEY,
+    EmployeeID INT NOT NULL,
+    ActionType VARCHAR(20) NOT NULL CHECK (ActionType IN ('INSERT', 'UPDATE', 'DELETE')),
+    OldStatus NVARCHAR(20),
+    NewStatus NVARCHAR(20),
+    OldDepartmentID VARCHAR(10),
+    NewDepartmentID VARCHAR(10),
+    ChangedBy VARCHAR(100),
+    ChangedAt DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- Customer Audit Log (Track customer changes - INSERT, UPDATE, DELETE)
+CREATE TABLE CustomerAuditLog (
+    AuditID INT IDENTITY(1,1) PRIMARY KEY,
+    CustID INT NOT NULL,
+    ActionType VARCHAR(20) NOT NULL CHECK (ActionType IN ('INSERT', 'UPDATE', 'DELETE')),
+    OldStatus VARCHAR(20),
+    NewStatus VARCHAR(20),
+    ChangedBy INT,
+    ChangedAt DATETIME DEFAULT GETDATE(),
+    
+    FOREIGN KEY (CustID) REFERENCES Customers(CustID),
+    FOREIGN KEY (ChangedBy) REFERENCES Employees(EmployeeID)
+);
+GO
+
+-- Login Audit Log (Track user login activities)
+CREATE TABLE LoginAuditLog (
+    AuditID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT,
+    Username VARCHAR(100) NOT NULL,
+    LoginStatus VARCHAR(20) NOT NULL CHECK (LoginStatus IN ('SUCCESS', 'FAILED')),
+    LoginAttemptTime DATETIME DEFAULT GETDATE(),
+    
+    FOREIGN KEY (UserID) REFERENCES AppUsers(UserID)
+);
+GO
+
+-- Product Audit Log (Track product price changes)
+CREATE TABLE ProductAuditLog (
+    AuditID INT IDENTITY(1,1) PRIMARY KEY,
+    ProductID INT NOT NULL,
+    ActionType VARCHAR(20) NOT NULL CHECK (ActionType IN ('INSERT', 'UPDATE', 'DELETE')),
+    OldSellingPrice DECIMAL(10,2),
+    NewSellingPrice DECIMAL(10,2),
+    ChangedBy INT,
+    ChangedAt DATETIME DEFAULT GETDATE(),
+    
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+    FOREIGN KEY (ChangedBy) REFERENCES Employees(EmployeeID)
+);
+GO
+
+-- Sensitive Data Access Log (Track who accessed sensitive data like salary)
+CREATE TABLE SensitiveDataAccessLog (
+    AuditID INT IDENTITY(1,1) PRIMARY KEY,
+    AccessedBy INT NOT NULL,
+    DataType VARCHAR(50) NOT NULL,  -- 'Salary', 'BankAccount', 'Commission'
+    RecordID INT,
+    AccessedAt DATETIME DEFAULT GETDATE(),
+    
+    FOREIGN KEY (AccessedBy) REFERENCES Employees(EmployeeID)
+);
+GO
