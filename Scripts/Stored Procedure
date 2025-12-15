@@ -69,7 +69,7 @@ BEGIN
 
 			PRINT 'Total cancelled orders: ' + CAST(@CancelledCount AS VARCHAR(10));
 
-			IF (@CancelledCount > 3)
+			IF (@CancelledCount > 5)
 			BEGIN
 				PRINT '';
 				PRINT 'All cancelled orders for this customer:';
