@@ -1,3 +1,4 @@
+--Value Insertion
 ------------			Value Insertion			------------
 INSERT INTO Department VALUES
 ('DBA', 'Database Administration'),
@@ -7,11 +8,6 @@ INSERT INTO Department VALUES
 ('MKT', 'Marketing Development'),
 ('ADMIN','Administation'),
 ('AGENT','Agents');
-GO
-
-INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
-('Team Lead',7.50),
-('Member',5.00);
 GO
 
 INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
@@ -67,11 +63,11 @@ SELECT * FROM Employees
 -- Agents Table
 
 INSERT INTO Agents(AgentID, RoleInDepartment, Region) VALUES
-(29, 'Team Lead', 'BukitJalil'),    -- Ahmed (Manager becomes Team Lead)
-(30, 'Member', 'Puchong'),          -- Shady
-(31, 'Member', 'PetalingJaya'),     -- Mohammed Rasheed
-(32, 'Member', 'Klang'),            -- Mohamed Abdurrazag
-(33, 'Member', 'Shah Alam');        -- Mahmoud
+(28, 'Team Lead', 'BukitJalil'),    -- Ahmed 
+(29, 'Member', 'Puchong'),          -- Shady
+(30, 'Member', 'PetalingJaya'),     -- Mohammed Rasheed
+(31, 'Member', 'Klang'),            -- Mohamed Abdurrazag
+(3, 'Member', 'Shah Alam');        -- Mahmoud
 GO
 
 SELECT * FROM Agents
@@ -80,38 +76,39 @@ SELECT * FROM Agents
 
 INSERT INTO Customers (CompanyName, CompanyRegNo, PersonInCharge, PersonInCharge_Contact, CompanyPhone, Email, CompanyAddress, BusinessType, Status, RegisteredBy)
 VALUES
-('Golden Dragon Restaurant', 'SSM201234567', 'Lim Ah Kow', '+60122001001', '+60322001001', 'contact@goldendragon.com', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Restaurant', 'Active', 29),
-('Grand Plaza Hotel', 'SSM201234568', 'Sarah Wong', '+60122001002', '+60322001002', 'info@grandplaza.com', '45 KLCC, Kuala Lumpur', 'Hotel', 'Active', 30),
-('Cozy Corner Cafe', 'SSM201234569', 'Ahmad bin Hassan', '+60122001003', '+60322001003', 'hello@cozycorner.com', '78 Bangsar, Kuala Lumpur', 'Cafe', 'Active', 31),
-('MegaMart Supermarket', 'SSM201234570', 'Tan Siew Li', '+60122001004', '+60322001004', 'support@megamart.com', '90 Petaling Jaya, Selangor', 'Supermarket', 'Active', 32),
-('Elite Catering Services', 'SSM201234571', 'Kumar Raj', '+60122001005', '+60322001005', 'orders@elitecatering.com', '12 Shah Alam, Selangor', 'Catering', 'Active', 33),
-('Happy Eats Restaurant', 'SSM201234572', 'Lee Mei Ling', '+60122001006', '+60322001006', 'hello@happyeats.com', '34 Cheras, Kuala Lumpur', 'Restaurant', 'Active', 29),
-('Sunrise Hotel', 'SSM201234573', 'David Tan', '+60122001007', '+60322001007', 'reservations@sunrise.com', '56 Puchong, Selangor', 'Hotel', 'Active', 30),
-('Fresh Mart', 'SSM201234574', 'Siti Nurhaliza', '+60122001008', '+60322001008', 'info@freshmart.com', '67 Subang Jaya, Selangor', 'Retailer', 'Active', 31),
-('Tasty Bites Cafe', 'SSM201234575', 'Chen Wei', '+60122001009', '+60322001009', 'contact@tastybites.com', '89 Mont Kiara, Kuala Lumpur', 'Cafe', 'Active', 32),
-('Supreme Catering', 'SSM201234576', 'Raj Kumar', '+60122001010', '+60322001010', 'bookings@supreme.com', '101 Klang, Selangor', 'Catering', 'Active', 33);
+('Golden Dragon Restaurant', 'SSM201234567', 'Lim Ah Kow', '+60122001001', '+60322001001', 'contact@goldendragon.com', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Restaurant', 'Active', 28),
+('Grand Plaza Hotel', 'SSM201234568', 'Sarah Wong', '+60122001002', '+60322001002', 'info@grandplaza.com', '45 KLCC, Kuala Lumpur', 'Hotel', 'Active', 29),
+('Cozy Corner Cafe', 'SSM201234569', 'Ahmad bin Hassan', '+60122001003', '+60322001003', 'hello@cozycorner.com', '78 Bangsar, Kuala Lumpur', 'Cafe', 'Active', 30),
+('MegaMart Supermarket', 'SSM201234570', 'Tan Siew Li', '+60122001004', '+60322001004', 'support@megamart.com', '90 Petaling Jaya, Selangor', 'Supermarket', 'Active', 31),
+('Elite Catering Services', 'SSM201234571', 'Kumar Raj', '+60122001005', '+60322001005', 'orders@elitecatering.com', '12 Shah Alam, Selangor', 'Catering', 'Active', 32),
+('Happy Eats Restaurant', 'SSM201234572', 'Lee Mei Ling', '+60122001006', '+60322001006', 'hello@happyeats.com', '34 Cheras, Kuala Lumpur', 'Restaurant', 'Active', 28),
+('Sunrise Hotel', 'SSM201234573', 'David Tan', '+60122001007', '+60322001007', 'reservations@sunrise.com', '56 Puchong, Selangor', 'Hotel', 'Active', 29),
+('Fresh Mart', 'SSM201234574', 'Siti Nurhaliza', '+60122001008', '+60322001008', 'info@freshmart.com', '67 Subang Jaya, Selangor', 'Retailer', 'Active', 30),
+('Tasty Bites Cafe', 'SSM201234575', 'Chen Wei', '+60122001009', '+60322001009', 'contact@tastybites.com', '89 Mont Kiara, Kuala Lumpur', 'Cafe', 'Active', 31),
+('Supreme Catering', 'SSM201234576', 'Raj Kumar', '+60122001010', '+60322001010', 'bookings@supreme.com', '101 Klang, Selangor', 'Catering', 'Active', 32);
 GO
 
 SELECT * FROM Customers
 
 -- App user table
 
-INSERT INTO AppUsers (Username, PasswordHash, UserType, EmployeeID, CustID, IsActive)
-VALUES
+INSERT INTO AppUsers (Username, PasswordHash, UserType, EmployeeID, CustID, IsActive) 
+VALUES 
+-- Employee Accounts
 
--- Employee Accpunts
-('ahmed.admin', CAST('dummyhash001' AS VARBINARY(256)), 'EMPLOYEE', 29, NULL, 1),
-('eric.admin', CAST('dummyhash002' AS VARBINARY(256)), 'EMPLOYEE', 25, NULL, 1),
-('amjad.hr', CAST('dummyhash003' AS VARBINARY(256)), 'EMPLOYEE', 14, NULL, 1),
+('leong.dba', CAST('dummyhash002' AS VARBINARY(256)), 'EMPLOYEE', 1, NULL, 1),
+('mohammed.sdev', CAST('dummyhash003' AS VARBINARY(256)), 'EMPLOYEE', 6, NULL, 1),
 ('poh.acc', CAST('dummyhash004' AS VARBINARY(256)), 'EMPLOYEE', 10, NULL, 1),
-('wan.mkt', CAST('dummyhash005' AS VARBINARY(256)), 'EMPLOYEE', 19, NULL, 1),
+('amjad.hr', CAST('dummyhash005' AS VARBINARY(256)), 'EMPLOYEE', 14, NULL, 1),
+('wan.mkt', CAST('dummyhash006' AS VARBINARY(256)), 'EMPLOYEE', 19, NULL, 1),
+('eric.admin', CAST('dummyhash007' AS VARBINARY(256)), 'EMPLOYEE', 24, NULL, 1),
+-- Customer Accounts 
 
--- Customer accounts
-('goldendragon', CAST('custhash001' AS VARBINARY(256)), 'CUSTOMER', NULL, 1, 1),
-('grandplaza', CAST('custhash002' AS VARBINARY(256)), 'CUSTOMER', NULL, 2, 1),
-('cozycorner', CAST('custhash003' AS VARBINARY(256)), 'CUSTOMER', NULL, 3, 1),
-('megamart', CAST('custhash004' AS VARBINARY(256)), 'CUSTOMER', NULL, 4, 1),
-('elitecatering', CAST('custhash005' AS VARBINARY(256)), 'CUSTOMER', NULL, 5, 1);
+('goldendragon', CAST('custhash001' AS VARBINARY(256)), 'CUSTOMER', NULL, 21, 1),
+('grandplaza', CAST('custhash002' AS VARBINARY(256)), 'CUSTOMER', NULL, 22, 1),
+('cozycorner', CAST('custhash003' AS VARBINARY(256)), 'CUSTOMER', NULL, 23, 1),
+('megamart', CAST('custhash004' AS VARBINARY(256)), 'CUSTOMER', NULL, 24, 1),
+('elitecatering', CAST('custhash005' AS VARBINARY(256)), 'CUSTOMER', NULL, 25, 1);
 GO
 
 -- Products Table
@@ -141,33 +138,143 @@ GO
 
 -- Sales Table
 SELECT * FROM Sales;
-DELETE FROM SalesDetails;
-DELETE FROM Sales;
 GO
 
-
+-- Paid orders
 INSERT INTO Sales (AgentID, CustID, EmployeeID, TotalAmount, SalesDate, PaymentStatus, PaymentMethod, PaymentDate, DeliveryDate, DeliveryAddress)
 VALUES
--- Paid orders
-(29, 1, 25, 2450.00, '2025-01-15 10:30:00', 'PAID', 'Online Banking', '2025-01-15 14:20:00', '2025-01-17 09:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur'),
-(30, 2, 25, 5600.00, '2025-01-20 09:15:00', 'PAID', 'Credit Card', '2025-01-20 11:30:00', '2025-01-22 10:00:00', '45 KLCC, Kuala Lumpur'),
-(31, 3, 26, 1280.00, '2025-02-01 14:00:00', 'PAID', 'E-Wallet', '2025-02-01 15:45:00', '2025-02-03 11:00:00', '78 Bangsar, Kuala Lumpur'),
-(32, 6, 26, 3450.00, '2025-02-10 11:20:00', 'PAID', 'Online Banking', '2025-02-10 16:00:00', '2025-02-12 10:00:00', '34 Cheras, Kuala Lumpur'),
-(33, 10, 27, 4200.00, '2025-02-15 13:45:00', 'PAID', 'Credit Card', '2025-02-15 17:30:00', '2025-02-17 09:00:00', '101 Klang, Selangor'),
+(28, 21, 25, 2450.00, '2025-01-15 10:30:00', 'PAID', 'Online Banking', '2025-01-15 14:20:00', '2025-01-17 09:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur'),
+(29, 22, 25, 5600.00, '2025-01-20 09:15:00', 'PAID', 'Credit Card', '2025-01-20 11:30:00', '2025-01-22 10:00:00', '45 KLCC, Kuala Lumpur'),
+(30, 23, 26, 1280.00, '2025-02-01 14:00:00', 'PAID', 'E-Wallet', '2025-02-01 15:45:00', '2025-02-03 11:00:00', '78 Bangsar, Kuala Lumpur'),
+(31, 26, 26, 3450.00, '2025-02-10 11:20:00', 'PAID', 'Online Banking', '2025-02-10 16:00:00', '2025-02-12 10:00:00', '34 Cheras, Kuala Lumpur'),
+(32, 30, 27, 4200.00, '2025-02-15 13:45:00', 'PAID', 'Credit Card', '2025-02-15 17:30:00', '2025-02-17 09:00:00', '101 Klang, Selangor'),
 
 -- Pending orders
-(29, 4, 26, 8900.00, '2025-11-05 11:00:00', 'PENDING', 'CashOnDelivery', NULL, '2025-11-07 08:00:00', '90 Petaling Jaya, Selangor'),
-(30, 5, 27, 3200.00, '2025-12-05 16:30:00', 'PENDING', 'Online Banking', NULL, '2025-12-08 09:00:00', '12 Shah Alam, Selangor'),
-(31, 8, 27, 2100.00, '2025-12-07 10:15:00', 'PENDING', 'E-Wallet', NULL, '2025-12-10 11:00:00', '67 Subang Jaya, Selangor');
+(29, 24, 26, 8900.00, '2025-11-05 11:00:00', 'PENDING', 'CashOnDelivery', NULL, '2025-11-07 08:00:00', '90 Petaling Jaya, Selangor'),
+(30, 25, 27, 3200.00, '2025-12-05 16:30:00', 'PENDING', 'Online Banking', NULL, '2025-12-08 09:00:00', '12 Shah Alam, Selangor'),
+(31, 28, 27, 2100.00, '2025-12-07 10:15:00', 'PENDING', 'E-Wallet', NULL, '2025-12-10 11:00:00', '67 Subang Jaya, Selangor');
 GO
 
 -- Cancelled orders
 INSERT INTO Sales (AgentID, CustID, EmployeeID, TotalAmount, SalesDate, PaymentStatus, PaymentMethod, PaymentDate, DeliveryDate, DeliveryAddress, CancellationReason, CancellationNotes, CancelledDate)
 VALUES
-(32, 1, 25, 1500.00, '2024-12-25 13:00:00', 'CANCELLED', 'Credit Card', NULL, '2024-12-27 10:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Customer Request', 'Customer changed order requirements', '2024-12-26 09:30:00'),
-(33, 7, 25, 2800.00, '2024-12-30 15:20:00', 'CANCELLED', 'Online Banking', NULL, '2025-01-01 09:00:00', '56 Puchong, Selangor', 'Payment Failed', NULL, '2024-12-31 11:00:00');
+(32, 21, 25, 1500.00, '2024-12-25 13:00:00', 'CANCELLED', 'Credit Card', NULL, '2024-12-27 10:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Customer Request', 'Customer changed order requirements', '2024-12-26 09:30:00'),
+(28, 27, 25, 2800.00, '2024-12-30 15:20:00', 'CANCELLED', 'Online Banking', NULL, '2025-01-01 09:00:00', '56 Puchong, Selangor', 'Payment Failed', NULL, '2024-12-31 11:00:00');
 GO
 
 -- Verify Sales 
-SELECT SalesID, CustID, PaymentStatus, TotalAmount FROM Sales ORDER BY SalesID;
+SELECT SalesID, AgentID, CustID, EmployeeID, PaymentStatus, TotalAmount FROM Sales ORDER BY SalesID;
 GO
+
+-- Sales Details Table --
+
+INSERT INTO SalesDetails (SalesID, SalesDetailsID, ProductID, UnitPrice, Quantity, Amount)
+VALUES
+-- Sales 5 (Total: 2450.00) - PAID
+(5, 1, 1, 120.00, 10, 1200.00),  -- Premium Rice
+(5, 2, 2, 35.00, 20, 700.00),    -- Cooking Oil
+(5, 3, 7, 28.00, 15, 420.00),    -- Soy Sauce
+(5, 4, 12, 12.00, 11, 132.00),   -- Chicken Stock
+
+-- Sales 6 (Total: 5600.00) - PAID
+(6, 1, 1, 120.00, 30, 3600.00),
+(6, 2, 4, 50.00, 20, 1000.00),
+(6, 3, 11, 38.00, 20, 760.00),
+(6, 4, 3, 5.00, 48, 240.00),
+
+-- Sales 7 (Total: 1280.00) - PAID
+(7, 1, 10, 6.50, 100, 650.00),
+(7, 2, 9, 5.00, 80, 400.00),
+(7, 3, 8, 18.00, 10, 180.00),
+(7, 4, 5, 2.50, 20, 50.00),
+
+-- Sales 8 (Total: 3450.00) - PAID
+(8, 1, 1, 120.00, 15, 1800.00),
+(8, 2, 2, 35.00, 30, 1050.00),
+(8, 3, 6, 22.00, 20, 440.00),
+(8, 4, 13, 9.00, 10, 90.00),
+(8, 5, 14, 8.50, 8, 68.00),
+
+-- Sales 9 (Total: 4200.00) - PAID
+(9, 1, 4, 50.00, 50, 2500.00),
+(9, 2, 1, 120.00, 10, 1200.00),
+(9, 3, 7, 28.00, 10, 280.00),
+(9, 4, 8, 18.00, 10, 180.00),
+(9, 5, 5, 2.50, 16, 40.00),
+
+-- Sales 10 (Total: 8900.00) - PENDING
+(10, 1, 1, 120.00, 50, 6000.00),
+(10, 2, 4, 50.00, 40, 2000.00),
+(10, 3, 11, 38.00, 20, 760.00),
+(10, 4, 15, 11.00, 10, 110.00),
+(10, 5, 6, 22.00, 3, 66.00),
+
+-- Sales 11 (Total: 3200.00) - PENDING
+(11, 1, 1, 120.00, 20, 2400.00),
+(11, 2, 2, 35.00, 15, 525.00),
+(11, 3, 16, 10.00, 15, 150.00),
+(11, 4, 17, 12.50, 10, 125.00),
+
+-- Sales 12 (Total: 2100.00) - PENDING
+(12, 1, 10, 6.50, 150, 975.00),
+(12, 2, 9, 5.00, 100, 500.00),
+(12, 3, 3, 5.00, 100, 500.00),
+(12, 4, 12, 12.00, 10, 120.00),
+(12, 5, 5, 2.50, 20, 50.00),
+
+-- Sales 13 (Total: 1500.00) - CANCELLED
+(13, 1, 1, 120.00, 10, 1200.00),
+(13, 2, 2, 35.00, 5, 175.00),
+(13, 3, 12, 12.00, 10, 120.00),
+(13, 4, 5, 2.50, 2, 5.00),
+
+-- Sales 14 (Total: 2800.00) - CANCELLED
+(14, 1, 1, 120.00, 15, 1800.00),
+(14, 2, 4, 50.00, 10, 500.00),
+(14, 3, 11, 38.00, 10, 380.00),
+(14, 4, 7, 28.00, 3, 84.00),
+(14, 5, 6, 22.00, 2, 44.00);
+GO
+
+-- Verify totals match
+SELECT 
+    s.SalesID,
+    s.TotalAmount as ExpectedTotal,
+    SUM(sd.Amount) as CalculatedTotal,
+    CASE 
+        WHEN s.TotalAmount = SUM(sd.Amount) THEN 'Match'
+        ELSE ' Mismatch'
+    END as Status
+FROM Sales s
+JOIN SalesDetails sd ON s.SalesID = sd.SalesID
+GROUP BY s.SalesID, s.TotalAmount
+ORDER BY s.SalesID;
+
+-- DeliveryStatus
+INSERT INTO DeliveryStatus (SalesID, DeliveryStatus)
+VALUES
+(5, 'Delivered'),
+(6, 'Delivered'),
+(7, 'Delivered'),
+(8, 'Delivered'),
+(9, 'Delivered'),
+(10, 'Order Placed'),
+(11, 'Order Placed'),
+(12, 'Order Placed'),
+(13, 'Returned to Sender'),
+(14, 'Returned to Sender');
+GO
+
+-- Commission (only for PAID orders: 5-9)
+INSERT INTO Commission (SalesID, AgentID, SalesAmount, CommissionRate, CommissionAmount)
+VALUES
+(5, 28, 2450.00, 7.50, 183.75),  -- Team Lead rate
+(6, 29, 5600.00, 5.00, 280.00),  -- Member rate
+(7, 30, 1280.00, 5.00, 64.00),   -- Member rate
+(8, 31, 3450.00, 5.00, 172.50),  -- Member rate
+(9, 32, 4200.00, 5.00, 210.00);  -- Member rate
+GO
+
+SELECT SalesID, AgentID, CustID, PaymentStatus, TotalAmount, SalesDate 
+FROM Sales 
+ORDER BY SalesID;
