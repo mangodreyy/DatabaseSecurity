@@ -1,3 +1,272 @@
+USE DBS_G17;
+GO
+
+-- Step 1: Delete all data in correct order (respecting foreign keys)
+DELETE FROM Commission;
+DELETE FROM DeliveryStatus;
+DELETE FROM SalesDetails;
+DELETE FROM Sales;
+DELETE FROM AppUsers;
+DELETE FROM Agents;
+DELETE FROM Customers;
+DELETE FROM Employees;
+DELETE FROM Products;
+DELETE FROM CommissionRates;
+DELETE FROM Department;
+GO
+
+-- Step 2: Reset all identity columns to start from 1
+DBCC CHECKIDENT ('Employees', RESEED, 0);
+DBCC CHECKIDENT ('Customers', RESEED, 0);
+DBCC CHECKIDENT ('AppUsers', RESEED, 0);
+DBCC CHECKIDENT ('Products', RESEED, 0);
+DBCC CHECKIDENT ('Sales', RESEED, 0);
+DBCC CHECKIDENT ('DeliveryStatus', RESEED, 0);
+DBCC CHECKIDENT ('CommissionRates', RESEED, 0);
+DBCC CHECKIDENT ('Commission', RESEED, 0);
+GO
+
+-- Step 3: Verify everything is empty
+SELECT 'Department' as TableName, COUNT(*) as Records FROM Department
+UNION ALL SELECT 'Employees', COUNT(*) FROM Employees
+UNION ALL SELECT 'Agents', COUNT(*) FROM Agents
+UNION ALL SELECT 'Customers', COUNT(*) FROM Customers
+UNION ALL SELECT 'AppUsers', COUNT(*) FROM AppUsers
+UNION ALL SELECT 'Products', COUNT(*) FROM Products
+UNION ALL SELECT 'Sales', COUNT(*) FROM Sales
+UNION ALL SELECT 'SalesDetails', COUNT(*) FROM SalesDetails
+UNION ALL SELECT 'DeliveryStatus', COUNT(*) FROM DeliveryStatus
+UNION ALL SELECT 'Commission', COUNT(*) FROM Commission
+UNION ALL SELECT 'CommissionRates', COUNT(*) FROM CommissionRates;
+GO
+
+PRINT 'Database cleared! All tables are now empty and ready for fresh data.';
+GO
+
+-- Creation of Assignment's Database --
+
+CREATE DATABASE DBS_G17;
+GO
+
+USE DBS_G17;
+GO
+
+-- Role
+
+CREATE ROLE DBA_Role;
+CREATE ROLE SDEV_Role;
+CREATE ROLE ACC_Role;
+CREATE ROLE HR_Role;
+CREATE ROLE MKT_Role;
+CREATE ROLE ADMIN_Role;
+CREATE ROLE AGENT_Role;
+GO
+
+
+
+-- Create Tables
+------------			TABLES					------------
+-- Department Table
+CREATE TABLE Department (
+	DepartmentID VARCHAR(10) NOT NULL PRIMARY KEY,
+	DepartmentName VARCHAR(100) UNIQUE NOT NULL
+);
+GO
+
+-- Database Administrations Table [DBA]
+-- Software Developers Team Table [SDEV]
+-- Accounting Team Table [ACC]
+-- Human Resources Team Table [HR]
+-- Marketing Development Table [MKT]
+-- Administration Table [ADMIN]
+
+-- Employee Table
+CREATE TABLE Employees (
+	EmployeeID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
+	DepartmentID VARCHAR(10) FOREIGN KEY REFERENCES Department(DepartmentID),
+	Status NVARCHAR(20) DEFAULT 'ACTIVE',
+	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
+	FullName VARCHAR(100) NOT NULL,
+	Email NVARCHAR(100) NOT NULL UNIQUE,
+	Phone NVARCHAR(20) NOT NULL UNIQUE ,
+	SalaryPerMonth DECIMAL(10,2) NOT NULL,
+	BankAccountNumber VARCHAR(20) NOT NULL,
+	MaritialStatus VARCHAR(50) CHECK (MaritialStatus IN ('Single','Married')),
+	EmergencyContact NVARCHAR(20) NOT NULL,
+	Relationship VARCHAR(50) CHECK (Relationship IN ('Father', 'Mother','Spouse','Siblings')),
+	Address NVARCHAR(255),
+	CreatedAt DATETIME DEFAULT GETDATE(),
+
+	CONSTRAINT CHK_BankAccountNumber_Format CHECK (BankAccountNumber NOT LIKE '%[^0-9]%')
+);
+GO
+
+-- Agents Table [AGENT]
+CREATE TABLE Agents (
+	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
+	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Team Lead', 'Member')),
+	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam')),
+	AssignedDate DATETIME DEFAULT GETDATE()
+);
+GO
+
+CREATE UNIQUE INDEX UQ_One_TeamLead_Per_Region 
+ON Agents(Region) 
+WHERE RoleInDepartment = 'Team Lead';
+GO
+
+-- Customer Table
+CREATE TABLE Customers (
+	CustID INT IDENTITY (1,1) NOT NULL PRIMARY KEY,
+	CompanyName VARCHAR(200) NOT NULL UNIQUE,
+	CompanyRegNo VARCHAR(50) NOT NULL UNIQUE,
+
+	PersonInCharge VARCHAR(100) NOT NULL,
+	PersonInCharge_Contact VARCHAR(20) NOT NULL,
+
+	CompanyPhone VARCHAR(20) NOT NULL UNIQUE,
+	Email VARCHAR(200) NOT NULL UNIQUE,
+	CompanyAddress VARCHAR(255) NOT NULL,
+	BusinessType VARCHAR(50) CHECK (BusinessType IN('Restaurant', 'Hotel',
+	'Cafe', 'Supermarket', 'Catering', 'Retailer', 'Other')),
+
+	Status VARCHAR(20) DEFAULT 'Active' CHECK (Status IN ('Active', 'Inactive', 'Suspended')),
+	RegisteredBy INT FOREIGN KEY REFERENCES Employees(EmployeeID),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- Front End User Account Table
+CREATE TABLE AppUsers (
+	UserID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
+    -- Login Credentials
+    Username VARCHAR(100) NOT NULL UNIQUE, 
+    PasswordHash VARBINARY(256) NOT NULL, -- Store the securely hashed password
+    UserType VARCHAR(10) NOT NULL CHECK (UserType IN ('EMPLOYEE', 'CUSTOMER')),
+    
+    -- Links to Profile Tables (One of these must be NULL)
+    EmployeeID INT NULL FOREIGN KEY REFERENCES Employees(EmployeeID), 
+    CustID INT NULL FOREIGN KEY REFERENCES Customers(CustID), 
+    
+    -- Security Fields
+    LastLogin DATETIME NULL,
+    IsActive BIT DEFAULT 1,
+
+    -- CONSTRAINT to enforce that a UserID links to EITHER an Employee OR a Customer, but not both, and not neither.
+    CONSTRAINT CHK_One_Profile_Link 
+        CHECK (
+            (CASE WHEN EmployeeID IS NOT NULL THEN 1 ELSE 0 END + 
+             CASE WHEN CustID IS NOT NULL THEN 1 ELSE 0 END) = 1
+        )
+);
+GO
+
+-- Products Table
+-- status: instock outstock / available unavailable
+CREATE TABLE Products (
+	ProductID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	ProductName NVARCHAR(100) NOT NULL,
+	ProductDescription NVARCHAR(255),
+	BasePrice DECIMAL(10,2) NOT NULL,
+	SellingPrice DECIMAL(10,2) NOT NULL,
+	CreatedAt DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- Sales (Invoice) Table
+CREATE TABLE Sales (
+    SalesID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
+    CustID INT NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
+    EmployeeID INT NOT NULL FOREIGN KEY REFERENCES Employees(EmployeeID),
+    TotalAmount DECIMAL(10,2) NOT NULL,
+    SalesDate DATETIME DEFAULT GETDATE(),
+    PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
+    PaymentMethod CHAR(50) CHECK (PaymentMethod IN ('Online Banking','E-Wallet','Credit Card','CashOnDelivery')),
+    PaymentDate DATETIME,
+    DeliveryDate DATETIME NOT NULL,
+    DeliveryAddress NVARCHAR(255),
+    CancellationReason VARCHAR(50) CHECK (CancellationReason IN (
+        'Late Payment (Order Rejected)',
+        'Customer Request',
+        'Payment Failed',
+        'Out of Stock',
+        'Duplicate Order',
+        'Wrong Address',
+        'Other'
+    )) NULL,
+    CancellationNotes NVARCHAR(255) NULL,  -- Added
+    CancelledDate DATETIME NULL,
+    
+    -- Constraint: Cancellation fields can only be filled when status is CANCELLED
+    CONSTRAINT CHK_Cancellation_Only_When_Cancelled 
+        CHECK (
+            (PaymentStatus = 'CANCELLED' AND CancellationReason IS NOT NULL) OR
+            (PaymentStatus != 'CANCELLED' AND CancellationReason IS NULL AND CancellationNotes IS NULL AND CancelledDate IS NULL)
+        ),
+    
+    -- Constraint: PaymentDate can only be filled when status is PAID
+    CONSTRAINT CHK_PaymentDate_Only_When_Paid
+        CHECK (
+            (PaymentStatus = 'PAID' AND PaymentDate IS NOT NULL) OR
+            (PaymentStatus != 'PAID' AND PaymentDate IS NULL)
+        ),
+    
+    -- Constraint: CancellationNotes is required when CancellationReason is 'Other'
+    CONSTRAINT CHK_CancellationNotes_Required_For_Other
+        CHECK (
+            (CancellationReason = 'Other' AND CancellationNotes IS NOT NULL) OR
+            (CancellationReason != 'Other')
+        )
+);
+GO
+
+-- Sales Details Table
+CREATE TABLE SalesDetails (
+	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
+	SalesDetailsID INT NOT NULL,
+	ProductID INT NOT NULL FOREIGN KEY REFERENCES Products(ProductID),
+	UnitPrice DECIMAL (10,2) NOT NULL CHECK (UnitPrice >= 0),
+	Quantity INT NOT NULL CHECK (Quantity > 0),
+	Amount DECIMAL (10,2) NOT NULL CHECK (Amount >= 0)
+
+	CONSTRAINT SalesDetails_PK PRIMARY KEY (SalesID, SalesDetailsID),
+	CONSTRAINT SalesProducts UNIQUE (SalesID, ProductID)
+); 
+GO
+
+CREATE TABLE DeliveryStatus(
+	DeliveryID INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+	SalesID INT FOREIGN KEY REFERENCES Sales(SalesID),
+	DeliveryStatus VARCHAR(30) CHECK (DeliveryStatus IN ('Delivered','Returned to Sender','Order Placed')),
+	UpdatedAt DATETIME DEFAULT GETDATE(),
+
+	CONSTRAINT One_Delivery_Per_Sale UNIQUE (SalesID),
+);
+GO
+
+CREATE TABLE CommissionRates (
+	RateID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	RoleInDepartment VARCHAR(50) NOT NULL CHECK (RoleInDepartment IN ('Team Lead','Member')),
+	CommissionRate DECIMAL(5,2) NOT NULL,
+	EffectiveDate DATETIME DEFAULT GETDATE(),
+);
+GO
+
+-- Commission Table
+CREATE TABLE Commission (
+	CommissionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
+	AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
+	SalesAmount DECIMAL (10,2) NOT NULL,
+	CommissionRate DECIMAL (5,2) NOT NULL,
+	CommissionAmount DECIMAL(10,2) NOT NULL,
+	CalculatedDate DATETIME DEFAULT GETDATE(),
+
+	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID)
+);
+GO
+
 --Value Insertion
 ------------			Value Insertion			------------
 INSERT INTO Department VALUES
@@ -67,27 +336,26 @@ INSERT INTO Agents(AgentID, RoleInDepartment, Region) VALUES
 (29, 'Member', 'Puchong'),          -- Shady
 (30, 'Member', 'PetalingJaya'),     -- Mohammed Rasheed
 (31, 'Member', 'Klang'),            -- Mohamed Abdurrazag
-(3, 'Member', 'Shah Alam');        -- Mahmoud
+(32, 'Member', 'Shah Alam');        -- Mahmoud
 GO
 
 SELECT * FROM Agents
 
--- Customers Table
 
+-- Customers Table
 INSERT INTO Customers (CompanyName, CompanyRegNo, PersonInCharge, PersonInCharge_Contact, CompanyPhone, Email, CompanyAddress, BusinessType, Status, RegisteredBy)
 VALUES
-('Golden Dragon Restaurant', 'SSM201234567', 'Lim Ah Kow', '+60122001001', '+60322001001', 'contact@goldendragon.com', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Restaurant', 'Active', 28),
-('Grand Plaza Hotel', 'SSM201234568', 'Sarah Wong', '+60122001002', '+60322001002', 'info@grandplaza.com', '45 KLCC, Kuala Lumpur', 'Hotel', 'Active', 29),
-('Cozy Corner Cafe', 'SSM201234569', 'Ahmad bin Hassan', '+60122001003', '+60322001003', 'hello@cozycorner.com', '78 Bangsar, Kuala Lumpur', 'Cafe', 'Active', 30),
-('MegaMart Supermarket', 'SSM201234570', 'Tan Siew Li', '+60122001004', '+60322001004', 'support@megamart.com', '90 Petaling Jaya, Selangor', 'Supermarket', 'Active', 31),
-('Elite Catering Services', 'SSM201234571', 'Kumar Raj', '+60122001005', '+60322001005', 'orders@elitecatering.com', '12 Shah Alam, Selangor', 'Catering', 'Active', 32),
-('Happy Eats Restaurant', 'SSM201234572', 'Lee Mei Ling', '+60122001006', '+60322001006', 'hello@happyeats.com', '34 Cheras, Kuala Lumpur', 'Restaurant', 'Active', 28),
-('Sunrise Hotel', 'SSM201234573', 'David Tan', '+60122001007', '+60322001007', 'reservations@sunrise.com', '56 Puchong, Selangor', 'Hotel', 'Active', 29),
-('Fresh Mart', 'SSM201234574', 'Siti Nurhaliza', '+60122001008', '+60322001008', 'info@freshmart.com', '67 Subang Jaya, Selangor', 'Retailer', 'Active', 30),
-('Tasty Bites Cafe', 'SSM201234575', 'Chen Wei', '+60122001009', '+60322001009', 'contact@tastybites.com', '89 Mont Kiara, Kuala Lumpur', 'Cafe', 'Active', 31),
-('Supreme Catering', 'SSM201234576', 'Raj Kumar', '+60122001010', '+60322001010', 'bookings@supreme.com', '101 Klang, Selangor', 'Catering', 'Active', 32);
+('Golden Dragon Restaurant', 'SSM201234567', 'Lim Ah Kow', '+60122001001', '+60322001001', 'contact@goldendragon.com', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Restaurant', 'Active', 24),
+('Grand Plaza Hotel', 'SSM201234568', 'Sarah Wong', '+60122001002', '+60322001002', 'info@grandplaza.com', '45 KLCC, Kuala Lumpur', 'Hotel', 'Active', 25),
+('Cozy Corner Cafe', 'SSM201234569', 'Ahmad bin Hassan', '+60122001003', '+60322001003', 'hello@cozycorner.com', '78 Bangsar, Kuala Lumpur', 'Cafe', 'Active', 26),
+('MegaMart Supermarket', 'SSM201234570', 'Tan Siew Li', '+60122001004', '+60322001004', 'support@megamart.com', '90 Petaling Jaya, Selangor', 'Supermarket', 'Active', 27),
+('Elite Catering Services', 'SSM201234571', 'Kumar Raj', '+60122001005', '+60322001005', 'orders@elitecatering.com', '12 Shah Alam, Selangor', 'Catering', 'Active', 24),
+('Happy Eats Restaurant', 'SSM201234572', 'Lee Mei Ling', '+60122001006', '+60322001006', 'hello@happyeats.com', '34 Cheras, Kuala Lumpur', 'Restaurant', 'Active', 25),
+('Sunrise Hotel', 'SSM201234573', 'David Tan', '+60122001007', '+60322001007', 'reservations@sunrise.com', '56 Puchong, Selangor', 'Hotel', 'Active', 26),
+('Fresh Mart', 'SSM201234574', 'Siti Nurhaliza', '+60122001008', '+60322001008', 'info@freshmart.com', '67 Subang Jaya, Selangor', 'Retailer', 'Active', 27),
+('Tasty Bites Cafe', 'SSM201234575', 'Chen Wei', '+60122001009', '+60322001009', 'contact@tastybites.com', '89 Mont Kiara, Kuala Lumpur', 'Cafe', 'Active', 25),
+('Supreme Catering', 'SSM201234576', 'Raj Kumar', '+60122001010', '+60322001010', 'bookings@supreme.com', '101 Klang, Selangor', 'Catering', 'Active', 26);
 GO
-
 SELECT * FROM Customers
 
 -- App user table
@@ -95,145 +363,139 @@ SELECT * FROM Customers
 INSERT INTO AppUsers (Username, PasswordHash, UserType, EmployeeID, CustID, IsActive) 
 VALUES 
 -- Employee Accounts
-
 ('leong.dba', CAST('dummyhash002' AS VARBINARY(256)), 'EMPLOYEE', 1, NULL, 1),
 ('mohammed.sdev', CAST('dummyhash003' AS VARBINARY(256)), 'EMPLOYEE', 6, NULL, 1),
 ('poh.acc', CAST('dummyhash004' AS VARBINARY(256)), 'EMPLOYEE', 10, NULL, 1),
 ('amjad.hr', CAST('dummyhash005' AS VARBINARY(256)), 'EMPLOYEE', 14, NULL, 1),
 ('wan.mkt', CAST('dummyhash006' AS VARBINARY(256)), 'EMPLOYEE', 19, NULL, 1),
 ('eric.admin', CAST('dummyhash007' AS VARBINARY(256)), 'EMPLOYEE', 24, NULL, 1),
--- Customer Accounts 
 
-('goldendragon', CAST('custhash001' AS VARBINARY(256)), 'CUSTOMER', NULL, 21, 1),
-('grandplaza', CAST('custhash002' AS VARBINARY(256)), 'CUSTOMER', NULL, 22, 1),
-('cozycorner', CAST('custhash003' AS VARBINARY(256)), 'CUSTOMER', NULL, 23, 1),
-('megamart', CAST('custhash004' AS VARBINARY(256)), 'CUSTOMER', NULL, 24, 1),
-('elitecatering', CAST('custhash005' AS VARBINARY(256)), 'CUSTOMER', NULL, 25, 1);
+-- Customer Accounts 
+('goldendragon', CAST('custhash001' AS VARBINARY(256)), 'CUSTOMER', NULL, 1, 1),
+('grandplaza', CAST('custhash002' AS VARBINARY(256)), 'CUSTOMER', NULL, 2, 1),
+('cozycorner', CAST('custhash003' AS VARBINARY(256)), 'CUSTOMER', NULL, 3, 1),
+('megamart', CAST('custhash004' AS VARBINARY(256)), 'CUSTOMER', NULL, 4, 1),
+('elitecatering', CAST('custhash005' AS VARBINARY(256)), 'CUSTOMER', NULL, 5, 1),
+('happyeats', CAST('custhash006' AS VARBINARY(256)), 'CUSTOMER', NULL, 6, 1),
+('sunrise', CAST('custhash007' AS VARBINARY(256)), 'CUSTOMER', NULL, 7, 1),
+('freshmart', CAST('custhash008' AS VARBINARY(256)), 'CUSTOMER', NULL, 8, 1),
+('tastybites', CAST('custhash009' AS VARBINARY(256)), 'CUSTOMER', NULL, 9, 1),
+('supreme', CAST('custhash010' AS VARBINARY(256)), 'CUSTOMER', NULL, 10, 1);
 GO
 
 -- Products Table
+
 INSERT INTO Products (ProductName, ProductDescription, BasePrice, SellingPrice)
 VALUES
-('Premium Rice 25kg', 'High-quality Thai Jasmine rice', 80.00, 120.00),
-('Cooking Oil 5L', 'Refined palm cooking oil', 25.00, 35.00),
-('All-Purpose Flour 1kg', 'Bakery grade wheat flour', 3.50, 5.00),
-('White Sugar 10kg', 'Fine granulated white sugar', 35.00, 50.00),
-('Table Salt 1kg', 'Iodized table salt', 1.50, 2.50),
-('Black Pepper 500g', 'Ground black pepper', 15.00, 22.00),
-('Soy Sauce 5L', 'Premium dark soy sauce', 18.00, 28.00),
-('Oyster Sauce 2L', 'Quality oyster sauce', 12.00, 18.00),
-('Canned Tomatoes 400g', 'Italian peeled tomatoes', 3.00, 5.00),
-('Dried Pasta 500g', 'Italian spaghetti pasta', 4.00, 6.50),
-('Olive Oil 1L', 'Extra virgin olive oil', 25.00, 38.00),
-('Chicken Stock 1L', 'Concentrated chicken stock', 8.00, 12.00),
-('Garlic Powder 200g', 'Pure garlic powder', 6.00, 9.00),
-('Onion Powder 200g', 'Pure onion powder', 5.50, 8.50),
-('Paprika 100g', 'Smoked paprika powder', 7.00, 11.00),
-('Chili Powder 200g', 'Hot chili powder', 6.50, 10.00),
-('Cumin Seeds 250g', 'Whole cumin seeds', 8.00, 12.50),
-('Turmeric Powder 200g', 'Pure turmeric powder', 7.50, 11.50),
-('Cinnamon Sticks 100g', 'Ceylon cinnamon sticks', 12.00, 18.00),
-('Bay Leaves 50g', 'Dried bay leaves', 5.00, 8.00);
+('Eggplants', 'Fresh purple eggplants', 80.00, 120.00),
+('Potatoes', 'High-quality white potatoes', 25.00, 35.00),
+('Tomatoes', 'Ripe red tomatoes', 3.50, 5.00),
+('Cabbages', 'Fresh green cabbages', 35.00, 50.00),
+('Carrots', 'Organic carrots', 1.50, 2.50),
+('Spinaches', 'Fresh green spinach', 15.00, 22.00),
+('Cucumbers', 'Crisp cucumbers', 18.00, 28.00),
+('Broccoli', 'Fresh broccoli florets', 12.00, 18.00),
+('Cauliflower', 'White cauliflower heads', 3.00, 5.00),
+('Sweet Potatoes', 'Orange sweet potatoes', 4.00, 6.50),
+('Radishes', 'Fresh red radishes', 25.00, 38.00),
+('Green Beans', 'Tender green beans', 8.00, 12.00),
+('Asparagus', 'Premium asparagus spears', 6.00, 9.00),
+('Lettuce', 'Crisp iceberg lettuce', 5.50, 8.50),
+('Mushrooms', 'Fresh button mushrooms', 7.00, 11.00),
+('Bell Peppers', 'Mixed color bell peppers', 6.50, 10.00),
+('Pumpkin', 'Large orange pumpkins', 8.00, 12.50),
+('Zucchini', 'Fresh green zucchini', 7.50, 11.50),
+('Ginger', 'Fresh ginger root', 12.00, 18.00),
+('Onions', 'Yellow onions', 5.00, 8.00);
 GO
+SELECT * FROM Products;
 
 -- Sales Table
-SELECT * FROM Sales;
-GO
 
 -- Paid orders
 INSERT INTO Sales (AgentID, CustID, EmployeeID, TotalAmount, SalesDate, PaymentStatus, PaymentMethod, PaymentDate, DeliveryDate, DeliveryAddress)
 VALUES
-(28, 21, 25, 2450.00, '2025-01-15 10:30:00', 'PAID', 'Online Banking', '2025-01-15 14:20:00', '2025-01-17 09:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur'),
-(29, 22, 25, 5600.00, '2025-01-20 09:15:00', 'PAID', 'Credit Card', '2025-01-20 11:30:00', '2025-01-22 10:00:00', '45 KLCC, Kuala Lumpur'),
-(30, 23, 26, 1280.00, '2025-02-01 14:00:00', 'PAID', 'E-Wallet', '2025-02-01 15:45:00', '2025-02-03 11:00:00', '78 Bangsar, Kuala Lumpur'),
-(31, 26, 26, 3450.00, '2025-02-10 11:20:00', 'PAID', 'Online Banking', '2025-02-10 16:00:00', '2025-02-12 10:00:00', '34 Cheras, Kuala Lumpur'),
-(32, 30, 27, 4200.00, '2025-02-15 13:45:00', 'PAID', 'Credit Card', '2025-02-15 17:30:00', '2025-02-17 09:00:00', '101 Klang, Selangor'),
+(28, 1, 1, 2450.00, '2025-01-15 10:30:00', 'PAID', 'Online Banking', '2025-01-15 14:20:00', '2025-01-17 09:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur'),
+(29, 2, 6, 5600.00, '2025-01-20 09:15:00', 'PAID', 'Credit Card', '2025-01-20 11:30:00', '2025-01-22 10:00:00', '45 KLCC, Kuala Lumpur'),
+(30, 3, 10, 1280.00, '2025-02-01 14:00:00', 'PAID', 'E-Wallet', '2025-02-01 15:45:00', '2025-02-03 11:00:00', '78 Bangsar, Kuala Lumpur'),
+(31, 6, 14, 3450.00, '2025-02-10 11:20:00', 'PAID', 'Online Banking', '2025-02-10 16:00:00', '2025-02-12 10:00:00', '34 Cheras, Kuala Lumpur'),
+(32, 10, 19, 4200.00, '2025-02-15 13:45:00', 'PAID', 'Credit Card', '2025-02-15 17:30:00', '2025-02-17 09:00:00', '101 Klang, Selangor'),
 
 -- Pending orders
-(29, 24, 26, 8900.00, '2025-11-05 11:00:00', 'PENDING', 'CashOnDelivery', NULL, '2025-11-07 08:00:00', '90 Petaling Jaya, Selangor'),
-(30, 25, 27, 3200.00, '2025-12-05 16:30:00', 'PENDING', 'Online Banking', NULL, '2025-12-08 09:00:00', '12 Shah Alam, Selangor'),
-(31, 28, 27, 2100.00, '2025-12-07 10:15:00', 'PENDING', 'E-Wallet', NULL, '2025-12-10 11:00:00', '67 Subang Jaya, Selangor');
+(29, 4, 24, 8900.00, '2025-11-05 11:00:00', 'PENDING', 'CashOnDelivery', NULL, '2025-11-07 08:00:00', '90 Petaling Jaya, Selangor'),
+(30, 5, 1, 3200.00, '2025-12-05 16:30:00', 'PENDING', 'Online Banking', NULL, '2025-12-08 09:00:00', '12 Shah Alam, Selangor'),
+(31, 8, 6, 2100.00, '2025-12-07 10:15:00', 'PENDING', 'E-Wallet', NULL, '2025-12-10 11:00:00', '67 Subang Jaya, Selangor');
 GO
 
 -- Cancelled orders
 INSERT INTO Sales (AgentID, CustID, EmployeeID, TotalAmount, SalesDate, PaymentStatus, PaymentMethod, PaymentDate, DeliveryDate, DeliveryAddress, CancellationReason, CancellationNotes, CancelledDate)
 VALUES
-(32, 21, 25, 1500.00, '2024-12-25 13:00:00', 'CANCELLED', 'Credit Card', NULL, '2024-12-27 10:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Customer Request', 'Customer changed order requirements', '2024-12-26 09:30:00'),
-(28, 27, 25, 2800.00, '2024-12-30 15:20:00', 'CANCELLED', 'Online Banking', NULL, '2025-01-01 09:00:00', '56 Puchong, Selangor', 'Payment Failed', NULL, '2024-12-31 11:00:00');
+(32, 1, 10, 1500.00, '2024-12-25 13:00:00', 'CANCELLED', 'Credit Card', NULL, '2024-12-27 10:00:00', '123 Jalan Bukit Bintang, Kuala Lumpur', 'Customer Request', 'Customer changed order requirements', '2024-12-26 09:30:00'),
+(28, 7, 14, 2800.00, '2024-12-30 15:20:00', 'CANCELLED', 'Online Banking', NULL, '2025-01-01 09:00:00', '56 Puchong, Selangor', 'Payment Failed', NULL, '2024-12-31 11:00:00');
 GO
 
 -- Verify Sales 
 SELECT SalesID, AgentID, CustID, EmployeeID, PaymentStatus, TotalAmount FROM Sales ORDER BY SalesID;
 GO
 
--- Sales Details Table --
-
+-- Insert SalesDetails
 INSERT INTO SalesDetails (SalesID, SalesDetailsID, ProductID, UnitPrice, Quantity, Amount)
 VALUES
--- Sales 5 (Total: 2450.00) - PAID
-(5, 1, 1, 120.00, 10, 1200.00),  -- Premium Rice
-(5, 2, 2, 35.00, 20, 700.00),    -- Cooking Oil
-(5, 3, 7, 28.00, 15, 420.00),    -- Soy Sauce
-(5, 4, 12, 12.00, 11, 132.00),   -- Chicken Stock
+-- Sales 3 (Total: 1280.00) - PAID
+(3, 1, 10, 6.50, 100, 650.00),
+(3, 2, 9, 5.00, 80, 400.00),
+(3, 3, 8, 18.00, 10, 180.00),
+(3, 4, 5, 2.50, 20, 50.00),
 
--- Sales 6 (Total: 5600.00) - PAID
-(6, 1, 1, 120.00, 30, 3600.00),
-(6, 2, 4, 50.00, 20, 1000.00),
+-- Sales 4 (Total: 3450.00) - PAID
+(4, 1, 1, 120.00, 15, 1800.00),
+(4, 2, 2, 35.00, 30, 1050.00),
+(4, 3, 6, 22.00, 20, 440.00),
+(4, 4, 13, 9.00, 10, 90.00),
+(4, 5, 14, 8.50, 8, 68.00),
+(4, 6, 5, 2.50, 1, 2.00),
+
+-- Sales 5 (Total: 4200.00) - PAID
+(5, 1, 4, 50.00, 50, 2500.00),
+(5, 2, 1, 120.00, 10, 1200.00),
+(5, 3, 7, 28.00, 10, 280.00),
+(5, 4, 8, 18.00, 10, 180.00),
+(5, 5, 5, 2.50, 16, 40.00),
+
+-- Sales 6 (Total: 8900.00) - PENDING
+(6, 1, 1, 120.00, 50, 6000.00),
+(6, 2, 4, 50.00, 40, 2000.00),
 (6, 3, 11, 38.00, 20, 760.00),
-(6, 4, 3, 5.00, 48, 240.00),
+(6, 4, 15, 11.00, 10, 110.00),
+(6, 5, 6, 22.00, 1, 22.00),
+(6, 6, 3, 5.00, 2, 8.00),
 
--- Sales 7 (Total: 1280.00) - PAID
-(7, 1, 10, 6.50, 100, 650.00),
-(7, 2, 9, 5.00, 80, 400.00),
-(7, 3, 8, 18.00, 10, 180.00),
-(7, 4, 5, 2.50, 20, 50.00),
+-- Sales 7 (Total: 3200.00) - PENDING
+(7, 1, 1, 120.00, 20, 2400.00),
+(7, 2, 2, 35.00, 15, 525.00),
+(7, 3, 16, 10.00, 15, 150.00),
+(7, 4, 17, 12.50, 10, 125.00),
 
--- Sales 8 (Total: 3450.00) - PAID
-(8, 1, 1, 120.00, 15, 1800.00),
-(8, 2, 2, 35.00, 30, 1050.00),
-(8, 3, 6, 22.00, 20, 440.00),
-(8, 4, 13, 9.00, 10, 90.00),
-(8, 5, 14, 8.50, 8, 68.00),
+-- Sales 8 (Total: 2100.00) - PENDING
+(8, 1, 10, 6.50, 150, 975.00),
+(8, 2, 9, 5.00, 100, 500.00),
+(8, 3, 3, 5.00, 100, 500.00),
+(8, 4, 12, 12.00, 10, 120.00),
+(8, 5, 5, 2.50, 2, 5.00),
 
--- Sales 9 (Total: 4200.00) - PAID
-(9, 1, 4, 50.00, 50, 2500.00),
-(9, 2, 1, 120.00, 10, 1200.00),
-(9, 3, 7, 28.00, 10, 280.00),
-(9, 4, 8, 18.00, 10, 180.00),
-(9, 5, 5, 2.50, 16, 40.00),
+-- Sales 9 (Total: 1500.00) - CANCELLED
+(9, 1, 1, 120.00, 10, 1200.00),
+(9, 2, 2, 35.00, 5, 175.00),
+(9, 3, 12, 12.00, 10, 120.00),
+(9, 4, 5, 2.50, 2, 5.00),
 
--- Sales 10 (Total: 8900.00) - PENDING
-(10, 1, 1, 120.00, 50, 6000.00),
-(10, 2, 4, 50.00, 40, 2000.00),
-(10, 3, 11, 38.00, 20, 760.00),
-(10, 4, 15, 11.00, 10, 110.00),
-(10, 5, 6, 22.00, 3, 66.00),
-
--- Sales 11 (Total: 3200.00) - PENDING
-(11, 1, 1, 120.00, 20, 2400.00),
-(11, 2, 2, 35.00, 15, 525.00),
-(11, 3, 16, 10.00, 15, 150.00),
-(11, 4, 17, 12.50, 10, 125.00),
-
--- Sales 12 (Total: 2100.00) - PENDING
-(12, 1, 10, 6.50, 150, 975.00),
-(12, 2, 9, 5.00, 100, 500.00),
-(12, 3, 3, 5.00, 100, 500.00),
-(12, 4, 12, 12.00, 10, 120.00),
-(12, 5, 5, 2.50, 20, 50.00),
-
--- Sales 13 (Total: 1500.00) - CANCELLED
-(13, 1, 1, 120.00, 10, 1200.00),
-(13, 2, 2, 35.00, 5, 175.00),
-(13, 3, 12, 12.00, 10, 120.00),
-(13, 4, 5, 2.50, 2, 5.00),
-
--- Sales 14 (Total: 2800.00) - CANCELLED
-(14, 1, 1, 120.00, 15, 1800.00),
-(14, 2, 4, 50.00, 10, 500.00),
-(14, 3, 11, 38.00, 10, 380.00),
-(14, 4, 7, 28.00, 3, 84.00),
-(14, 5, 6, 22.00, 2, 44.00);
+-- Sales 10 (Total: 2800.00) - CANCELLED
+(10, 1, 1, 120.00, 15, 1800.00),
+(10, 2, 4, 50.00, 10, 500.00),
+(10, 3, 11, 38.00, 10, 380.00),
+(10, 4, 7, 28.00, 3, 84.00),
+(10, 5, 6, 22.00, 1, 22.00),
+(10, 6, 5, 2.50, 6, 14.00);
 GO
 
 -- Verify totals match
@@ -243,38 +505,31 @@ SELECT
     SUM(sd.Amount) as CalculatedTotal,
     CASE 
         WHEN s.TotalAmount = SUM(sd.Amount) THEN 'Match'
-        ELSE ' Mismatch'
+        ELSE 'Mismatch'
     END as Status
 FROM Sales s
 JOIN SalesDetails sd ON s.SalesID = sd.SalesID
 GROUP BY s.SalesID, s.TotalAmount
 ORDER BY s.SalesID;
+GO
 
--- DeliveryStatus
+-- Insert DeliveryStatus 
 INSERT INTO DeliveryStatus (SalesID, DeliveryStatus)
 VALUES
+(3, 'Delivered'),
+(4, 'Delivered'),
 (5, 'Delivered'),
-(6, 'Delivered'),
-(7, 'Delivered'),
-(8, 'Delivered'),
-(9, 'Delivered'),
-(10, 'Order Placed'),
-(11, 'Order Placed'),
-(12, 'Order Placed'),
-(13, 'Returned to Sender'),
-(14, 'Returned to Sender');
+(6, 'Order Placed'),
+(7, 'Order Placed'),
+(8, 'Order Placed'),
+(9, 'Returned to Sender'),
+(10, 'Returned to Sender');
 GO
 
--- Commission (only for PAID orders: 5-9)
+-- Insert Commission for PAID orders only (Sales 3-5)
 INSERT INTO Commission (SalesID, AgentID, SalesAmount, CommissionRate, CommissionAmount)
 VALUES
-(5, 28, 2450.00, 7.50, 183.75),  -- Team Lead rate
-(6, 29, 5600.00, 5.00, 280.00),  -- Member rate
-(7, 30, 1280.00, 5.00, 64.00),   -- Member rate
-(8, 31, 3450.00, 5.00, 172.50),  -- Member rate
-(9, 32, 4200.00, 5.00, 210.00);  -- Member rate
+(3, 30, 1280.00, 5.00, 64.00),   -- Member
+(4, 31, 3450.00, 5.00, 172.50),  -- Member
+(5, 32, 4200.00, 5.00, 210.00);  -- Member
 GO
-
-SELECT SalesID, AgentID, CustID, PaymentStatus, TotalAmount, SalesDate 
-FROM Sales 
-ORDER BY SalesID;
