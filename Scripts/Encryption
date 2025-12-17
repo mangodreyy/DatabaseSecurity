@@ -9,3 +9,8 @@ create database encryption key with algorithm = AES_256
 encryption by server certificate DBS_G17;
 
 alter database DBS_G17 set encryption on;
+
+------------		   CLE Encryption			------------
+
+
+------------		   Hashing      			------------
