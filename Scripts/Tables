@@ -1,8 +1,232 @@
-@@ -199,3 +199,91 @@ CREATE TABLE Commission (
+------------			TABLES					------------
+-- Department Table
+CREATE TABLE Department (
+	DepartmentID VARCHAR(10) NOT NULL PRIMARY KEY,
+	DepartmentName VARCHAR(100) UNIQUE NOT NULL
+);
+GO
+
+-- Database Administrations Table [DBA]
+-- Software Developers Team Table [SDEV]
+-- Accounting Team Table [ACC]
+-- Human Resources Team Table [HR]
+-- Marketing Development Table [MKT]
+-- Administration Table [ADMIN]
+
+-- Employee Table
+CREATE TABLE Employees (
+	EmployeeID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
+	DepartmentID VARCHAR(10) FOREIGN KEY REFERENCES Department(DepartmentID),
+	Status NVARCHAR(20) DEFAULT 'ACTIVE',
+	RoleInDepartment VARCHAR(50) CHECK (RoleInDepartment IN ('Manager', 'Team Member')),
+	FullName VARCHAR(100) NOT NULL,
+	Email NVARCHAR(100) NOT NULL UNIQUE,
+	Phone NVARCHAR(20) NOT NULL UNIQUE ,
+	SalaryPerMonth DECIMAL(10,2) NOT NULL,
+	BankAccountNumber VARCHAR(20) NOT NULL,
+	MaritialStatus VARCHAR(50) CHECK (MaritialStatus IN ('Single','Married')),
+	EmergencyContact NVARCHAR(20) NOT NULL,
+	Relationship VARCHAR(50) CHECK (Relationship IN ('Father', 'Mother','Spouse','Siblings')),
+	Address NVARCHAR(255),
+	CreatedAt DATETIME DEFAULT GETDATE(),
+
+	CONSTRAINT CHK_BankAccountNumber_Format CHECK (BankAccountNumber NOT LIKE '%[^0-9]%')
+);
+GO
+
+CREATE UNIQUE INDEX UQ_One_Manager_Per_Department
+ON Employees(DepartmentID)
+WHERE RoleInDepartment = 'Manager';
+GO
+
+-- Agents Table [AGENT]
+CREATE TABLE Agents (
+	AgentID INT NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES Employees(EmployeeID),
+	AgentRole VARCHAR(50) CHECK (AgentRole IN ('Team Lead', 'Member')),
+	Region NVARCHAR(200) NOT NULL CHECK (Region IN ('BukitJalil','Puchong','PetalingJaya','Klang', 'Shah Alam')),
+	AssignedDate DATETIME DEFAULT GETDATE()
+);
+GO
+
+CREATE UNIQUE INDEX UQ_One_TeamLead_Per_Region 
+ON Agents(Region) 
+WHERE AgentRole = 'Team Lead';
+GO
+
+-- Customer Table
+CREATE TABLE Customers (
+	CustID INT IDENTITY (1,1) NOT NULL PRIMARY KEY,
+	CompanyName VARCHAR(200) NOT NULL UNIQUE,
+	CompanyRegNo VARCHAR(50) NOT NULL UNIQUE,
+
+	PersonInCharge VARCHAR(100) NOT NULL,
+	PersonInCharge_Contact VARCHAR(20) NOT NULL,
+
+	CompanyPhone VARCHAR(20) NOT NULL UNIQUE,
+	Email VARCHAR(200) NOT NULL UNIQUE,
+	CompanyAddress VARCHAR(255) NOT NULL,
+	BusinessType VARCHAR(50) CHECK (BusinessType IN('Restaurant', 'Hotel',
+	'Cafe', 'Supermarket', 'Catering', 'Retailer', 'Other')),
+
+	Status VARCHAR(20) DEFAULT 'Active' CHECK (Status IN ('Active', 'Inactive', 'Suspended')),
+	RegisteredBy INT FOREIGN KEY REFERENCES Employees(EmployeeID),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- Front End User Account Table
+CREATE TABLE AppUsers (
+	UserID INT IDENTITY(1,1) NOT NULL PRIMARY KEY, 
+    -- Login Credentials
+    Username VARCHAR(100) NOT NULL UNIQUE, 
+    PasswordHash VARBINARY(256) NOT NULL, -- Store the securely hashed password
+    UserType VARCHAR(10) NOT NULL CHECK (UserType IN ('EMPLOYEE', 'CUSTOMER')),
+    
+    -- Links to Profile Tables (One of these must be NULL)
+    EmployeeID INT NULL FOREIGN KEY REFERENCES Employees(EmployeeID), 
+    CustID INT NULL FOREIGN KEY REFERENCES Customers(CustID), 
+    
+    -- Security Fields
+    LastLogin DATETIME NULL,
+    IsActive BIT DEFAULT 1,
+
+    -- CONSTRAINT to enforce that a UserID links to EITHER an Employee OR a Customer, but not both, and not neither.
+    CONSTRAINT CHK_One_Profile_Link 
+        CHECK (
+            (CASE WHEN EmployeeID IS NOT NULL THEN 1 ELSE 0 END + 
+             CASE WHEN CustID IS NOT NULL THEN 1 ELSE 0 END) = 1
+        )
+);
+GO
+
+-- Products Table
+CREATE TABLE Products (
+	ProductID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	ProductName NVARCHAR(100) NOT NULL,
+	ProductDescription NVARCHAR(255),
+    BasePrice DECIMAL(10,2) NOT NULL CHECK (BasePrice >= 0),
+    SellingPrice DECIMAL(10,2) NOT NULL CHECK (SellingPrice >= 0),
+    StockQuantity INT NOT NULL DEFAULT 0 CHECK (StockQuantity >= 0),
+    ProductStatus VARCHAR(20) NOT NULL DEFAULT 'Available' CHECK (ProductStatus IN ('Available','Unavailable')),
+	CreatedAt DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- Sales (Invoice) Table
+CREATE TABLE Sales (
+    SalesID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
+    CustID INT NOT NULL FOREIGN KEY REFERENCES Customers(CustID),
+    EmployeeID INT NOT NULL FOREIGN KEY REFERENCES Employees(EmployeeID),
+    TotalAmount DECIMAL(10,2) NOT NULL,
+    SalesDate DATETIME DEFAULT GETDATE(),
+    PaymentStatus CHAR(10) CHECK (PaymentStatus IN ('PAID','PENDING','CANCELLED')),
+    PaymentMethod CHAR(50) CHECK (PaymentMethod IN ('Online Banking','E-Wallet','Credit Card','CashOnDelivery')),
+    PaymentDate DATETIME,
+    DeliveryDate DATETIME NOT NULL,
+    DeliveryAddress NVARCHAR(255),
+    CancellationReason VARCHAR(50) CHECK (CancellationReason IN (
+        'Late Payment (Order Rejected)',
+        'Customer Request',
+        'Payment Failed',
+        'Out of Stock',
+        'Duplicate Order',
+        'Wrong Address',
+        'Other'
+    )) NULL,
+    CancellationNotes NVARCHAR(255) NULL,
+    CancelledDate DATETIME NULL,
+    
+    -- Constraint 1: Cancellation fields only when CANCELLED
+    CONSTRAINT CHK_Cancellation_Only_When_Cancelled 
+        CHECK (
+            (PaymentStatus = 'CANCELLED' AND CancellationReason IS NOT NULL) OR
+            (PaymentStatus != 'CANCELLED' AND CancellationReason IS NULL AND CancellationNotes IS NULL AND CancelledDate IS NULL)
+        ),
+    
+    -- Constraint 2: PaymentDate only when PAID
+    CONSTRAINT CHK_PaymentDate_Only_When_Paid
+        CHECK (
+            (PaymentStatus = 'PAID' AND PaymentDate IS NOT NULL) OR
+            (PaymentStatus != 'PAID' AND PaymentDate IS NULL)
+        ),
+    
+    -- Constraint 3: CancellationNotes logic (FIXED!)
+    CONSTRAINT CHK_CancellationNotes_Logic
+        CHECK (
+            -- If reason is 'Other', notes MUST exist
+            (CancellationReason = 'Other' AND CancellationNotes IS NOT NULL) OR
+            -- If reason is NOT 'Other' but exists, notes MUST be NULL
+            (CancellationReason IS NOT NULL AND CancellationReason != 'Other' AND CancellationNotes IS NULL) OR
+            -- If no reason, no notes
+            (CancellationReason IS NULL AND CancellationNotes IS NULL)
+        )
+);
+GO
+
+-- Sales Details Table
+CREATE TABLE SalesDetails (
+	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
+	SalesDetailsID INT NOT NULL,
+	ProductID INT NOT NULL FOREIGN KEY REFERENCES Products(ProductID),
+	UnitPrice DECIMAL (10,2) NOT NULL CHECK (UnitPrice >= 0),
+	Quantity INT NOT NULL CHECK (Quantity > 0),
+	Amount DECIMAL (10,2) NOT NULL CHECK (Amount >= 0)
+
+	CONSTRAINT SalesDetails_PK PRIMARY KEY (SalesID, SalesDetailsID),
+	CONSTRAINT SalesProducts UNIQUE (SalesID, ProductID)
+); 
+GO
+
+CREATE TABLE DeliveryStatus(
+	DeliveryID INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+	SalesID INT FOREIGN KEY REFERENCES Sales(SalesID),
+	DeliveryStatus VARCHAR(30) CHECK (DeliveryStatus IN ('Delivered','Returned to Sender','Order Placed')),
+	UpdatedAt DATETIME DEFAULT GETDATE(),
+
+	CONSTRAINT One_Delivery_Per_Sale UNIQUE (SalesID),
+);
+GO
+
+CREATE TABLE CommissionRates (
+	RateID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	RoleInDepartment VARCHAR(50) NOT NULL CHECK (RoleInDepartment IN ('Team Lead','Member')),
+	CommissionRate DECIMAL(5,2) NOT NULL,
+	EffectiveDate DATETIME DEFAULT GETDATE(),
+);
+GO
+
+-- Commission Table
+CREATE TABLE Commission (
+	CommissionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
+	AgentID INT NOT NULL FOREIGN KEY REFERENCES Agents(AgentID),
+	SalesAmount DECIMAL (10,2) NOT NULL,
+	CommissionRate DECIMAL (5,2) NOT NULL,
+	CommissionAmount DECIMAL(10,2) NOT NULL,
+	CalculatedDate DATETIME DEFAULT GETDATE(),
+
 	CONSTRAINT One_Commission_Per_Sale UNIQUE (SalesID)
 );
 GO
 
+------------	  Audit Purposes Tables			------------
+-- Sales Status Audit Log Table
+CREATE TABLE SalesStatusAuditLog (
+	AuditID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	SalesID INT NOT NULL FOREIGN KEY REFERENCES Sales(SalesID),
+	ChangedBy INT NOT NULL FOREIGN KEY REFERENCES Employees(EmployeeID),
+	OldStatus CHAR(10),
+	NewStatus CHAR(10),
+	ChangeReason NVARCHAR(255),
+	ChangedAt DATETIME DEFAULT GETDATE(),
+	
+	-- Cancellation tracking fields
+	OldCancellationReason VARCHAR(50) NULL,
+	NewCancellationReason VARCHAR(50) NULL,
+	CancellationNotes NVARCHAR(255) NULL
+);
+GO
 
 -- AUDIT TABLES (NEED REVIEW AND DISCUSSION LATER)
 -- Sales Status Audit Log (Required by  ChangeSalesStatus procedure)
