@@ -1,3 +1,4 @@
+
 ------------			Value Insertion			------------
 INSERT INTO Department VALUES
 ('DBA', 'Database Administration'),
@@ -9,7 +10,53 @@ INSERT INTO Department VALUES
 ('AGENT','Agents');
 GO
 
-INSERT INTO CommissionRates (RoleInDepartment, CommissionRate) VALUES
-('Team Lead',7.50),
-('Member',5.00);
+--  Employees Table
+INSERT INTO Employees (DepartmentID, Status, RoleInDepartment, FullName, Email, Phone, SalaryPerMonth, BankAccountNumber, MaritialStatus, EmergencyContact, Relationship, Address)
+VALUES 
+    ('DBA', 'ACTIVE', 'Manager','Leong Ciao Shi', 'leong@gmail.com', '+601111111111', 8000.00, '1111111111', 'Married', '+601111111112', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Teng Yi Ling', 'teng@gmail.com', '+601111111113', 4500.00, '1111111113', 'Married', '+601111111114', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Shifra Shuaib Ali', 'shifra@gmail.com', '+601111111115', 4000.00, '1111111115', 'Single', '+601111111116', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Minhal Ali', 'minhal@gmail.com', '+601111111117', 4000.00, '1111111117', 'Single', '+601111111118', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('DBA', 'ACTIVE', 'Team Member', 'Ruba Mahdi Abdulsalam Mahdi', 'ruba@gmail.com', '+601111111119', 4200.00, '1111111119', 'Married', '+601111111110', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+   
+    ('SDEV', 'ACTIVE', 'Manager',     'Mohammed Ismail Elbagir Hussein', 'hamadha@gmail.com', '+601111111121', 8500.00, '1111111121', 'Married', '+601111111122', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('SDEV', 'ACTIVE', 'Team Member', 'Musab Salah Adam Younis', 'musab@gmail.com', '+601111111123', 5000.00, '1111111123', 'Married', '+601111111124', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('SDEV', 'ACTIVE', 'Team Member', 'Liu Yi Xian', 'liu@gmail.com', '+601111111125', 4800.00, '1111111125', 'Married', '+601111111126', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('SDEV', 'ACTIVE', 'Team Member', 'Mah Qing Xiang', 'mah@gmail.com', '+601111111127', 4500.00, '1111111127', 'Single', '+601111111128', 'Father', 'BukitJalil, Kuala Lumpur'),
+   
+    ('ACC', 'ACTIVE', 'Manager',     'Poh Yu Zhe', 'poh@gmail.com', '+601111111131', 7500.00, '1111111131', 'Married', '+601111111132', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('ACC', 'ACTIVE', 'Team Member', 'Lim Shin Er', 'lim@gmail.com', '+601111111133', 4200.00, '1111111133', 'Single', '+601111111134', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('ACC', 'ACTIVE', 'Team Member', 'Lai Wei Quan', 'lai@gmail.com', '+601111111135', 4300.00, '1111111135', 'Married', '+601111111136', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('ACC', 'ACTIVE', 'Team Member', 'Sim Yee Cong', 'cong@gmail.com', '+601111111137', 4000.00, '1111111137', 'Single', '+601111111138', 'Father', 'BukitJalil, Kuala Lumpur'),
+    
+    ('HR', 'ACTIVE', 'Manager',     'Amjad Alrifaai', 'amjad@gmail.com', '+601111111141', 7800.00, '1111111141', 'Married', '+601111111142', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Harrison Matthew Widjaja', 'matthew@gmail.com', '+601111111143', 4500.00, '1111111143', 'Single', '+601111111144', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Tan Chang Yau', 'tan@gmail.com', '+601111111145', 4200.00, '1111111145', 'Single', '+601111111146', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Venus Ong Jin Wen', 'venus@gmail.com', '+601111111147', 4400.00, '1111111147', 'Married', '+601111111148', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('HR', 'ACTIVE', 'Team Member', 'Viishnu Sree Ganesh', 'viishnu@gmail.com', '+601111111149', 4300.00, '1111111149', 'Single', '+601111111140', 'Father', 'BukitJalil, Kuala Lumpur'),
+    
+    ('MKT', 'ACTIVE', 'Manager',     'Wan Yi Zhi', 'wan@gmail.com', '+601111111151', 7800.00, '1111111151', 'Married', '+601111111152', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Miyoko Pang Zi Xuan', 'miyoko@gmail.com', '+601111111153', 4400.00, '1111111153', 'Single', '+601111111154', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Lau Yi Jing', 'yijing@gmail.com', '+601111111155', 4200.00, '1111111155', 'Single', '+601111111156', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Cerise Loo Lok Yu', 'cerise@gmail.com', '+601111111157', 4100.00, '1111111157', 'Single', '+601111111158', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('MKT', 'ACTIVE', 'Team Member', 'Anson Cheah Yen Xun', 'anson@gmail.com', '+601111111159', 4000.00, '1111111159', 'Single', '+601111111150', 'Father', 'BukitJalil, Kuala Lumpur'),
+
+    ('ADMIN', 'ACTIVE', 'Manager',     'Eric Ran Xin Zhen', 'eric@gmail.com', '+601111111161', 7800.00, '1111111161', 'Married', '+601111111162', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('ADMIN', 'ACTIVE', 'Team Member', 'Lim Cai Yun', 'limcai@gmail.com', '+601111111163', 4300.00, '1111111163', 'Single', '+601111111164', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('ADMIN', 'ACTIVE', 'Team Member', 'Tan Wei Xian', 'tanwei@gmail.com', '+601111111165', 4200.00, '1111111165', 'Single', '+601111111166', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('ADMIN', 'ACTIVE', 'Team Member', 'Wong Pin Xue', 'wongpin@gmail.com', '+601111111167', 4100.00, '1111111167', 'Single', '+601111111168', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    
+    ('AGENT', 'ACTIVE', 'Manager',     'Ahmed Mohamedosman Ahmed Omer', 'ahmed@gmail.com', '+601111111171', 7500.00, '1111111171', 'Single', '+601111111172', 'Siblings', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Shady Ehab Assad Ibrahim', 'shady@gmail.com', '+601111111173', 4500.00, '1111111173', 'Married', '+601111111174', 'Spouse', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Mohammed Rasheed Yehia Al Haddad', 'rasheed@gmail.com', '+601111111175', 4300.00, '1111111175', 'Single', '+601111111176', 'Father', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Mohamed Abdurrazag Jaber Seklani', 'seklani@gmail.com', '+601111111177', 4200.00, '1111111177', 'Single', '+601111111178', 'Mother', 'BukitJalil, Kuala Lumpur'),
+    ('AGENT', 'ACTIVE', 'Team Member', 'Mahmoud Samy Aly Ibrahim', 'samy@gmail.com', '+601111111179', 4100.00, '1111111179', 'Single', '+601111111170', 'Siblings', 'BukitJalil, Kuala Lumpur');
+GO
+
+SELECT * FROM Employees;
+
+-- Agents Table
+INSERT INTO Agents(AgentID, AgentRole, Region) VALUES
+(28, 'Team Lead', 'BukitJalil'),    -- Ahmed 
+(29, 'Member', 'Puchong'),          -- Shady
 GO
