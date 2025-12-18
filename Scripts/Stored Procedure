@@ -109,7 +109,7 @@ END
 GO
 
 -- Change Sales Status [admin only]
-CREATE PROCEDURE ChangeSalesStatus
+CREATE PROCEDURE Change_SalesStatus
 	@SalesID INT,
 	@NewStatus CHAR(10),
 	@ChangedBy INT,
@@ -325,7 +325,7 @@ GO
 -- view department employees [hr/admin]
 
 -- Monthly Sales Report for Finance Department [finance/acc]
-CREATE PROCEDURE GetMonthlySalesReport
+CREATE PROCEDURE Get_MonthlySalesReport
     @Year INT = NULL,
     @Month INT = NULL
 AS
@@ -378,16 +378,18 @@ BEGIN
     PRINT '--- TOP 3 AGENTS BY SALES ---';
     SELECT TOP 3
         a.AgentID,
-        a.FullName AS AgentName,
+        e.FullName AS AgentName,
         a.Region,
+        a.AgentRole,
         COUNT(s.SalesID) AS TotalSales,
         SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN 1 ELSE 0 END) AS PaidSales,
         FORMAT(SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END), 'N2') AS TotalRevenue
     FROM Sales s
     INNER JOIN Agents a ON s.AgentID = a.AgentID
+    INNER JOIN Employees e ON a.AgentID = e.EmployeeID
     WHERE YEAR(s.SalesDate) = @Year
         AND MONTH(s.SalesDate) = @Month
-    GROUP BY a.AgentID, a.FullName, a.Region
+    GROUP BY a.AgentID, e.FullName, a.Region, a.AgentRole
     ORDER BY SUM(CASE WHEN s.PaymentStatus = 'PAID' THEN s.TotalAmount ELSE 0 END) DESC;
     
     PRINT '';
@@ -407,8 +409,8 @@ BEGIN
             'INV-' + RIGHT('00000' + CAST(s.SalesID AS VARCHAR(5)), 5) AS InvoiceNumber,
             s.SalesID,
             CONVERT(VARCHAR(10), s.SalesDate, 120) AS SalesDate,
-            c.CustName AS Customer,
-            a.FullName AS Agent,
+            c.CompanyName AS Customer,     
+            ea.FullName AS Agent,           
             FORMAT(s.TotalAmount, 'N2') AS Amount,
             DATEDIFF(DAY, s.SalesDate, GETDATE()) AS DaysPending,
             e.FullName AS ResponsibleEmployee,
@@ -416,6 +418,7 @@ BEGIN
         FROM Sales s
         INNER JOIN Customers c ON s.CustID = c.CustID
         INNER JOIN Agents a ON s.AgentID = a.AgentID
+        INNER JOIN Employees ea ON a.AgentID = ea.EmployeeID  -- Join to get agent name
         INNER JOIN Employees e ON s.EmployeeID = e.EmployeeID
         WHERE YEAR(s.SalesDate) = @Year
             AND MONTH(s.SalesDate) = @Month
@@ -481,7 +484,7 @@ END
 GO
 
 -- Register New Employee [HR Department]
-CREATE PROCEDURE RegisterNewEmployee
+CREATE PROCEDURE Register_NewEmployee
     @DepartmentID VARCHAR(10),
     @RoleInDepartment VARCHAR(50),
     @FullName VARCHAR(100),
@@ -620,7 +623,7 @@ BEGIN
         
         -- Success message
         PRINT '========================================';
-        PRINT '✓ NEW EMPLOYEE REGISTERED SUCCESSFULLY';
+        PRINT '  NEW EMPLOYEE REGISTERED SUCCESSFULLY  ';
         PRINT '========================================';
         PRINT 'Employee ID: ' + CAST(@NewEmployeeID AS VARCHAR(10));
         PRINT 'Full Name: ' + @FullName;
@@ -646,3 +649,268 @@ BEGIN
     END CATCH
 END
 GO
+
+-- Register New Customer [ADMIN Department]
+CREATE PROCEDURE Register_NewCustomer
+    @CompanyName VARCHAR(200),
+    @CompanyRegNo VARCHAR(50),
+    @PersonInCharge VARCHAR(100),
+    @PersonInCharge_Contact VARCHAR(20),
+    @CompanyPhone VARCHAR(20),
+    @Email VARCHAR(200),
+    @CompanyAddress VARCHAR(255),
+    @BusinessType VARCHAR(50),
+    @RegisteredBy INT  -- Employee who is registering this customer
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @NewCustID INT;
+    DECLARE @RegisteredByName VARCHAR(100);
+    DECLARE @RegisteredByDept VARCHAR(10);
+    
+    -- Validate the person registering is from ADMIN department
+    SELECT @RegisteredByName = FullName, @RegisteredByDept = DepartmentID
+    FROM Employees
+    WHERE EmployeeID = @RegisteredBy;
+    
+    IF @RegisteredByName IS NULL
+    BEGIN
+        PRINT 'Error: Registering employee ID ' + CAST(@RegisteredBy AS VARCHAR(10)) + ' not found.';
+        RETURN;
+    END
+    
+    IF @RegisteredByDept != 'ADMIN'
+    BEGIN
+        PRINT 'Error: Only ADMIN department employees can register new customers.';
+        PRINT 'Employee ' + @RegisteredByName + ' is from ' + @RegisteredByDept + ' department.';
+        RETURN;
+    END
+    
+    -- Validation: Business Type 
+    IF @BusinessType NOT IN ('Restaurant', 'Hotel', 'Cafe', 'Supermarket', 'Catering', 'Retailer', 'Other')
+    BEGIN
+        PRINT 'Error: Invalid business type.';
+        PRINT 'Valid types: Restaurant, Hotel, Cafe, Supermarket, Catering, Retailer, Other';
+        RETURN;
+    END
+    
+    -- Validation: Company Name is unique
+    IF EXISTS (SELECT 1 FROM Customers WHERE CompanyName = @CompanyName)
+    BEGIN
+        PRINT 'Error: Company name ''' + @CompanyName + ''' is already registered.';
+        RETURN;
+    END
+    
+    -- Validation: Company Registration Number is unique
+    IF EXISTS (SELECT 1 FROM Customers WHERE CompanyRegNo = @CompanyRegNo)
+    BEGIN
+        PRINT 'Error: Company registration number ''' + @CompanyRegNo + ''' is already registered.';
+        RETURN;
+    END
+    
+    -- Validation: Email is unique
+    IF EXISTS (SELECT 1 FROM Customers WHERE Email = @Email)
+    BEGIN
+        PRINT 'Error: Email address ''' + @Email + ''' is already registered.';
+        RETURN;
+    END
+    
+    -- Validation: Phone is unique
+    IF EXISTS (SELECT 1 FROM Customers WHERE CompanyPhone = @CompanyPhone)
+    BEGIN
+        PRINT 'Error: Company phone number ''' + @CompanyPhone + ''' is already registered.';
+        RETURN;
+    END
+    
+    -- Validation: Email format
+    IF @Email NOT LIKE '%@%.%'
+    BEGIN
+        PRINT 'Error: Invalid email format.';
+        RETURN;
+    END
+    
+    -- Begin Transaction
+    BEGIN TRANSACTION;
+    
+    BEGIN TRY
+        -- Insert new customer
+        INSERT INTO Customers (
+            CompanyName,
+            CompanyRegNo,
+            PersonInCharge,
+            PersonInCharge_Contact,
+            CompanyPhone,
+            Email,
+            CompanyAddress,
+            BusinessType,
+            Status,
+            RegisteredBy,
+            CreatedAt
+        )
+        VALUES (
+            @CompanyName,
+            @CompanyRegNo,
+            @PersonInCharge,
+            @PersonInCharge_Contact,
+            @CompanyPhone,
+            @Email,
+            @CompanyAddress,
+            @BusinessType,
+            'Active',  -- Default status
+            @RegisteredBy,
+            GETDATE()
+        );
+        
+        -- Get the new customer ID
+        SET @NewCustID = SCOPE_IDENTITY();
+        
+        -- Commit transaction
+        COMMIT TRANSACTION;
+        
+        -- Success message
+        PRINT '========================================';
+        PRINT '  NEW CUSTOMER REGISTERED SUCCESSFULLY  ';
+        PRINT '========================================';
+        PRINT 'Customer ID: ' + CAST(@NewCustID AS VARCHAR(10));
+        PRINT 'Company Name: ' + @CompanyName;
+        PRINT 'Company Reg No: ' + @CompanyRegNo;
+        PRINT 'Business Type: ' + @BusinessType;
+        PRINT 'Person in Charge: ' + @PersonInCharge;
+        PRINT 'Contact: ' + @PersonInCharge_Contact;
+        PRINT 'Email: ' + @Email;
+        PRINT 'Phone: ' + @CompanyPhone;
+        PRINT 'Status: Active';
+        PRINT 'Registered By: ' + @RegisteredByName + ' (ID: ' + CAST(@RegisteredBy AS VARCHAR(10)) + ')';
+        PRINT 'Registered At: ' + CONVERT(VARCHAR(20), GETDATE(), 120);
+        PRINT '========================================';
+        
+        -- Return the new customer ID
+        SELECT @NewCustID AS NewCustomerID;
+        
+    END TRY
+    BEGIN CATCH
+        -- Rollback on error
+        ROLLBACK TRANSACTION;
+        
+        PRINT 'Error: Failed to register new customer.';
+        PRINT 'Error Message: ' + ERROR_MESSAGE();
+    END CATCH
+END
+GO
+
+CREATE PROCEDURE CalculateAndSummarise_Commission
+    @SalesID INT = NULL,
+    @AgentID INT = NULL,
+    @Month INT = NULL,
+    @Year INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- --- SCENARIO 1: CALCULATE COMMISSION FOR A SPECIFIC SALE ---
+    IF @SalesID IS NOT NULL
+    BEGIN
+        DECLARE @SalesAmount DECIMAL(10,2);
+        DECLARE @CurrentAgentID INT;
+        DECLARE @PaymentStatus CHAR(10);
+        DECLARE @AgentRole VARCHAR(50); -- Added to check role
+        DECLARE @CommissionRate DECIMAL(5,2); -- Now dynamic
+        DECLARE @CommissionAmount DECIMAL(10,2);
+
+        -- 1. Get sale details
+        SELECT 
+            @SalesAmount = TotalAmount, 
+            @CurrentAgentID = AgentID,
+            @PaymentStatus = PaymentStatus
+        FROM Sales
+        WHERE SalesID = @SalesID;
+
+        IF @PaymentStatus IS NULL
+        BEGIN
+            PRINT 'Error: Sales ID ' + CAST(@SalesID AS VARCHAR(10)) + ' not found.';
+            RETURN;
+        END
+
+        -- 2. Only process if status is 'PAID'
+        IF @PaymentStatus != 'PAID'
+        BEGIN
+            PRINT 'No action taken: Status is ' + @PaymentStatus + '. Only PAID sales earn commission.';
+            IF EXISTS (SELECT 1 FROM Commission WHERE SalesID = @SalesID)
+            BEGIN
+                DELETE FROM Commission WHERE SalesID = @SalesID;
+                PRINT 'Notice: Existing commission removed as status is no longer PAID.';
+            END
+            RETURN;
+        END
+
+        -- 3. FIX: Determine the Commission Rate based on Agent Role
+        SELECT @AgentRole = AgentRole 
+        FROM Agents 
+        WHERE AgentID = @CurrentAgentID;
+
+        IF @AgentRole = 'Team Lead'
+            SET @CommissionRate = 7.50; -- 7.5% for Leads
+        ELSE
+            SET @CommissionRate = 5.00; -- 5% for Members (default)
+
+        -- 4. Calculate Amount (Rate / 100)
+        SET @CommissionAmount = @SalesAmount * (@CommissionRate / 100);
+
+        -- 5. Update or Insert
+        IF EXISTS (SELECT 1 FROM Commission WHERE SalesID = @SalesID)
+        BEGIN
+            UPDATE Commission
+            SET SalesAmount = @SalesAmount,
+                AgentID = @CurrentAgentID, -- Ensure agent is correct
+                CommissionRate = @CommissionRate,
+                CommissionAmount = @CommissionAmount,
+                CalculatedDate = GETDATE()
+            WHERE SalesID = @SalesID;
+            PRINT '✓ Updated: ' + @AgentRole + ' earned ' + CAST(@CommissionRate AS VARCHAR(5)) + '% commission.';
+        END
+        ELSE
+        BEGIN
+            INSERT INTO Commission (SalesID, AgentID, SalesAmount, CommissionRate, CommissionAmount)
+            VALUES (@SalesID, @CurrentAgentID, @SalesAmount, @CommissionRate, @CommissionAmount);
+            PRINT '✓ Inserted: ' + @AgentRole + ' earned ' + CAST(@CommissionRate AS VARCHAR(5)) + '% commission.';
+        END
+    END
+
+    -- --- SCENARIO 2: SUM AGENT COMMISSIONS ---
+    -- (The reporting logic remains the same, but now reflects the correct totals)
+    IF @AgentID IS NOT NULL
+    BEGIN
+        SET @Month = ISNULL(@Month, MONTH(GETDATE()));
+        SET @Year = ISNULL(@Year, YEAR(GETDATE()));
+
+        DECLARE @TotalCommission DECIMAL(10,2);
+        DECLARE @AgentFullName VARCHAR(100);
+
+        SELECT @AgentFullName = e.FullName 
+        FROM Agents a
+        INNER JOIN Employees e ON a.AgentID = e.EmployeeID
+        WHERE a.AgentID = @AgentID;
+
+        IF @AgentFullName IS NULL
+        BEGIN
+            PRINT 'Error: Agent ID ' + CAST(@AgentID AS VARCHAR(10)) + ' not found.';
+            RETURN;
+        END
+
+        SELECT @TotalCommission = SUM(CommissionAmount)
+        FROM Commission
+        WHERE AgentID = @AgentID
+        AND MONTH(CalculatedDate) = @Month
+        AND YEAR(CalculatedDate) = @Year;
+
+        PRINT '--------------------------------------------------';
+        PRINT 'COMMISSION REPORT (PAID SALES ONLY)';
+        PRINT 'Agent: ' + @AgentFullName + ' (ID: ' + CAST(@AgentID AS VARCHAR(10)) + ')';
+        PRINT 'Period: ' + DATENAME(MONTH, DATEADD(MONTH, @Month - 1, '1900-01-01')) + ' ' + CAST(@Year AS VARCHAR(4));
+        PRINT 'Total Earned: RM' + ISNULL(CAST(@TotalCommission AS VARCHAR(20)), '0.00');
+        PRINT '--------------------------------------------------';
+    END
+END
+GO
+SELECT * FROM Commission;
+EXEC CalculateAndSummarise_Commission @SalesID = 1;
