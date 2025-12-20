@@ -50,3 +50,70 @@ GO
 
 
 ------------		   Hashing      			------------
+----add Salt Column---
+ALTER TABLE dbo.AppUsers
+ADD PasswordSalt VARBINARY(16) NOT NULL 
+    CONSTRAINT DF_AppUsers_PasswordSalt DEFAULT CRYPT_GEN_RANDOM(16);
+GO
+-----
+DECLARE @Password NVARCHAR(200) = N'Pass@123';
+
+UPDATE dbo.AppUsers
+SET
+    PasswordSalt = CRYPT_GEN_RANDOM(16),
+    PasswordHash = HASHBYTES(
+        'SHA2_256',
+        PasswordSalt + CAST(@Password AS VARBINARY(MAX))
+    );
+GO
+----
+CREATE OR ALTER PROCEDURE dbo.Verify_AppUserLogin
+    @Username VARCHAR(100),
+    @PlainPassword NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Salt VARBINARY(16);
+    DECLARE @StoredHash VARBINARY(32);
+    DECLARE @ComputedHash VARBINARY(32);
+
+    SELECT 
+        @Salt = PasswordSalt,
+        @StoredHash = PasswordHash
+    FROM dbo.AppUsers
+    WHERE Username = @Username
+      AND IsActive = 1;
+
+    IF @Salt IS NULL OR @StoredHash IS NULL
+    BEGIN
+        SELECT 'FAILED' AS LoginStatus;
+        RETURN;
+    END
+
+    SET @ComputedHash = HASHBYTES(
+        'SHA2_256',
+        @Salt + CAST(@PlainPassword AS VARBINARY(MAX))
+    );
+
+    IF @ComputedHash = @StoredHash
+        SELECT 'SUCCESS' AS LoginStatus;
+    ELSE
+        SELECT 'FAILED' AS LoginStatus;
+END;
+GO
+----
+
+EXEC dbo.Verify_AppUserLogin
+    @Username = 'leong.dba',
+    @PlainPassword = N'Pass@123';
+GO
+---------
+SELECT 
+    Username,
+    PasswordHash,
+    PasswordSalt
+FROM dbo.AppUsers
+WHERE Username = 'leong.dba';
+GO
+
