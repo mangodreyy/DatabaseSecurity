@@ -11,6 +11,42 @@ encryption by server certificate DBS_G17;
 alter database DBS_G17 set encryption on;
 
 ------------		   CLE Encryption			------------
+ALTER TABLE dbo.Employees
+ADD
+    SalaryPerMonth_Enc VARBINARY(256),
+    BankAccountNumber_Enc VARBINARY(256);
+GO
+--------
+OPEN SYMMETRIC KEY EmpSensitiveKey
+DECRYPTION BY CERTIFICATE EmpDataCert;
+GO
+---------------
+UPDATE dbo.Employees
+SET
+    SalaryPerMonth_Enc = EncryptByKey(
+        Key_GUID('EmpSensitiveKey'),
+        CONVERT(NVARCHAR(50), SalaryPerMonth)
+    ),
+    BankAccountNumber_Enc = EncryptByKey(
+        Key_GUID('EmpSensitiveKey'),
+        CONVERT(NVARCHAR(50), BankAccountNumber)
+    );
+GO
+----------------
+CLOSE SYMMETRIC KEY EmpSensitiveKey;
+GO
+-----------
+SELECT
+    EmployeeID,
+    FullName,
+    SalaryPerMonth,
+    SalaryPerMonth_Enc,
+    BankAccountNumber,
+    BankAccountNumber_Enc
+FROM Employees;
+GO
+
+
 
 
 ------------		   Hashing      			------------
